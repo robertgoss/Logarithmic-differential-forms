@@ -1,56 +1,74 @@
 #!/home/robert/sage-4.7.alpha2/sage
 
-
-def _compute_gens(relations,divisor):
-  #Deal with 1 var base case
-  if(len(relations[0])==1):
-    return _posible_gens(relations,divisor)
-  #Compute posible solutions to the first var
-  # and other solutuions based on this
-  r_1 = [rel for rel in relations if rel[0]!=0]
-  P_1 = _posible_gens(r_1,divisor)
-  part = []
-  for gen in P_1:
-    part.append(_particular_solution(gen,relations,divisor))
-  #Compute the general solutions where the first var is zero
-  r_gen = copy(r_1)
-  for r in r_gen:
-    r[0]=0
-  general_sol = _compute_gens(r_gen,divisor)
-  first_gens = _define_gens(part,general_sol)
-  #Get the gen set to satify remaining relations
-  r_2 = [rel for rel in relations if rel[0]==0]
-  r_sub = _subs_gens(first_gens,r_2)
-  subs_gen = _compute_gens(r_sub,divisor)
-  #Un sub
-  return _unsub_gens(subs_gens,first_gen)
+def _relations_generators(relations,ideal):
+  gens = _relation_generators(relations[0],ideal)
+  for rel in rels[1:]:
+    new_rel = _apply_relation(gens,rel)
+    new_gens = _relation_generators(new_rel,ideal)
+    gens = _unapply_relation(gens,new_gens)
+  return gens
   
-def _posible_gens(relations,divisor,var):
-  posible = (1)*divisor.parent()
-  for rel in relations:
-    if not var in rel.keys():
-      continue;
-    other_gens = [coeff for v,coeff in rel.iteritems() if v!=var]
-    other_gens.append(divisor)
-    I = other_gens*divisor.parent()
-    I = I.intersection((rel[var],)*divisor.parent())
-    new_pos = []
-    for g in I.gens():
-      new_pos.append(g/rel[var])
-    posible = posible.intersection(new_pos*divisor.parent())
-  return posible
+#Checked
+def _possible_gens(coeffs,ideal,var=0):
+  coeff_gens = list(ideal.gens())
+  poly_ring = coeffs[var].parent()
+  if coeffs[var]==poly_ring.zero():
+    return []
+  for i,coeff in enumerate(coeffs):
+    if not i==var:
+      coeff_gens.append(coeff)
+  poss_ideal = (coeff_gens*poly_ring).intersection((coeffs[var])*poly_ring)
+  poss_gens = []
+  for g in poss_ideal.gens():
+    poss_gens.append(g//coeffs[var])
+  return poss_gens
   
-def _particular_solution(val,relations,divisor,var):
-  pass;
+#Checked
+def _relation_generators(coeffs,ideal):
+  poly_ring = coeffs[0].parent()
+  #posible first vaules
+  poss_gens_0 = _possible_gens(coeffs,ideal,0)
+  #Particulars for thise values
+  part_ideal = (coeffs[1:]+list(ideal.gens()))*poly_ring
+  poss_gens = []
+  for g in poss_gens_0:
+    part_lift = (g*coeffs[0]).lift(part_ideal)
+    part_lift = part_lift[:(len(coeffs)-1)] # Drop ideal stuff
+    poss_gens.append([g]+part_lift)
+  #Solve for when first value is zero
+  if len(coeffs)>1:
+    red_coeffs = coeffs[1:]
+    red_gens = _relation_generators(red_coeffs,ideal)
+    for red_gen in red_gens:
+      poss_gens.append([poly_ring.zero()]+red_gen)
+  return poss_gens
   
-def _define_gens(particular,general):
-  pass
-
-def _subs_gens(gens,relations):
-  pass;
-
-def _unsub_gens(subs_gen,initial_gen):
-  pass;
+#checked
+def _apply_relation(generators,relation):
+  n = len(relation)
+  m = len(generators)
+  poly_ring = relation[0].parent()
+  coeffs = []
+  for i in range(m):
+    coeff = poly_ring.zero()
+    for j in range(n):
+      coeff += relation[j]*generators[i][j]
+    coeffs.append(coeff)
+  return coeffs
+  
+def _unapply_relation(old_gens,new_gens):
+  gens = []
+  poly_ring = old_gens[0][0].parent()
+  for t in new_gens:
+    gen = []
+    for i in range(len(old_gens[0])):
+      coeff = poly_ring.zero()
+      for j in range(len(old_gens)):
+        coeff += old_gens[j][i] * t[j]
+      gen.append(coeff)
+    gens.append(gen)
+  return gens
+  
 
 #Checked
 def _compute_p_relations(divisor,p):
@@ -68,23 +86,46 @@ def _compute_p_relations(divisor,p):
         else:
           rel[tuple(s.difference([i]))] = - diffs[i]
     rels.append(rel)
-  return rels;
+  #reform relations
+  new_rels = []
+  for rel in rels:
+    new_rel = []
+    for s in Set(range(divisor.parent().ngens())).subsets(p):
+      t = tuple(s)
+      if t in rel.keys():
+        new_rel.append(rel[t])
+      else:
+        new_rel.append(divisor.parent().zero())
+    new_rels.append(new_rel)
+  return new_rels;
   
 if __name__=="__main__":  
   C.<x,y,z> = PolynomialRing(QQ,3);
   h = x^2*y - z^2
+  print "Testing Generators"
   print  "0: ",_compute_p_relations(h,0)
   print  "1: ",_compute_p_relations(h,1)
   print  "2: ",_compute_p_relations(h,2)
   
-  rel = _compute_p_relations(h,0)
-  print "p: poss: ",_posible_gens(rel,h,tuple([]))
-  rel = _compute_p_relations(h,1)
-  print "p_x: poss: ",_posible_gens(rel,h,(0,))
-  print "p_y: poss: ",_posible_gens(rel,h,(1,))
-  print "p_z: poss: ",_posible_gens(rel,h,(2,))
-  rel = _compute_p_relations(h,2)
-  print "p_xy: poss: ",_posible_gens(rel,h,(0,1))
-  print "p_xz: poss: ",_posible_gens(rel,h,(0,2))
-  print "p_yz: poss: ",_posible_gens(rel,h,(1,2))
-
+  print "Testing Possible generators"
+  rel = [x^3,y+x,0,z]
+  ideal = (x^2*y-z^2)*C
+  print "Rel: ",rel
+  print "Ideal: ",ideal
+  print "Pos 0:",_possible_gens(rel,ideal,0)
+  print "Pos 1:",_possible_gens(rel,ideal,1)
+  print "Pos 2:",_possible_gens(rel,ideal,2)
+  print "Pos 3:",_possible_gens(rel,ideal,3)
+  
+  print "Testing Relation generator"
+  rel = [x^3,y+x,C.zero(),z]
+  ideal = (x^2*y-z^2)*C
+  print "Rel: ",rel
+  print "Ideal: ",ideal
+  print "Gens: ",_relation_generators(rel,ideal)
+  
+  print "Testing relations generator"
+  rels = [[x^2,x*y,z],[x,z^2,x+y]]
+  print "Rels: ",rels
+  print "Ideal: ",ideal
+  print "Gens: ",_relations_generators(rels,ideal)
