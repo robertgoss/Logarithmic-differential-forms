@@ -1,12 +1,8 @@
 #!/home/robert/sage-4.7.alpha2/sage
 
-def _relations_generators(relations,ideal):
-  gens = _relation_generators(relations[0],ideal)
-  for rel in rels[1:]:
-    new_rel = _apply_relation(gens,rel)
-    new_gens = _relation_generators(new_rel,ideal)
-    gens = _unapply_relation(gens,new_gens)
-  return gens
+#Todo add,test intersection
+#Todo add in
+#Todo add reduce
   
 #Checked
 def _possible_gens(coeffs,ideal,var=0):
@@ -43,33 +39,120 @@ def _relation_generators(coeffs,ideal):
       poss_gens.append([poly_ring.zero()]+red_gen)
   return poss_gens
   
-#checked
-def _apply_relation(generators,relation):
-  n = len(relation)
-  m = len(generators)
-  poly_ring = relation[0].parent()
-  coeffs = []
-  for i in range(m):
-    coeff = poly_ring.zero()
-    for j in range(n):
-      coeff += relation[j]*generators[i][j]
-    coeffs.append(coeff)
-  return coeffs
+#Checked
+def _make_sing_mod_from_gens(gens,mod_name="MD"):
+  poly_ring = gens[0][0].parent()
+  n_vars = poly_ring.ngens();
+  #create ring
+  mod = "ring r = 0,(x(1.."+str(n_vars)+")),dp;\n"
+  mod = mod + "module "+str(mod_name)+" = "
+  first_gen = true
+  for gen in gens:
+    if first_gen:
+      first_gen = false
+    else:
+      mod = mod + ","
+    mod += "["
+    first_poly = true
+    for poly in gen:
+      if first_poly:
+        first_poly = false;
+      else:
+        mod = mod + ","
+      if poly==poly_ring.zero():
+        mod = mod + "0"
+      first_mon = true
+      for mon in poly:
+        if first_mon:
+          first_mon = false;
+        else:
+          mod = mod + "+"
+        mod = mod + str(mon[0])
+        ex = mon[1].exponents()[0]
+        for ex_i,ex_m in enumerate(ex):
+          if ex_m != 0:
+            mod = mod + "*x("+str(ex_i+1)+")^"+str(ex_m);
+    mod = mod + "]"
+  return mod
   
-def _unapply_relation(old_gens,new_gens):
+#Checked
+def _gens_from_sing_mod(poly_ring,mod_string,mat_name='MM'):
+  mat = {}
+  for line in mod_string.split('\n'):
+    if line.find(mat_name)==0:
+      indices = line.split('[')[1]
+      indices = indices.split(']')[0]
+      indices = indices.split(',')
+      indices = [ int(i) for i in indices ]
+      eqn = line.split('=')[1]
+      eq = poly_ring.zero()
+      for mon in eqn.split('+'):
+        coeff = poly_ring.one()
+        for part in mon.split('*'):
+          try:
+            coeff = coeff * Rational(part)
+          except:
+            num = part.split('(')[1]
+            num = num.split(')')[0]
+            num = Integer(num)
+            try:
+              pow = Integer(part.split('^')[1])
+            except:
+              pow = 1
+            coeff = coeff * poly_ring.gens()[num-1]^pow;
+        eq = eq + coeff;
+      mat[(indices[0],indices[1])] = eq
+  ngens = max([ k[1] for k in mat.iterkeys() ])
+  nel = max([ k[0] for k in mat.iterkeys() ])
   gens = []
-  poly_ring = old_gens[0][0].parent()
-  for t in new_gens:
+  for i in range(ngens):
     gen = []
-    for i in range(len(old_gens[0])):
-      coeff = poly_ring.zero()
-      for j in range(len(old_gens)):
-        coeff += old_gens[j][i] * t[j]
-      gen.append(coeff)
+    for j in range(nel):
+      gen.append(mat[(j+1,i+1)])
     gens.append(gen)
-  return gens
+  return gens;
   
-
+#checked ish
+def _simplify_gens_by_div(gens,div):
+  new_gens = []
+  for gen in gens:
+    new_gen = []
+    for c in gen:
+      new_gen.append(c%div)
+    new_gens.append(new_gen)
+  return new_gens
+  
+class SingularModule():
+  def __init__(self,gens):
+    self.gens = gens
+    
+  def intersection(self,module):
+    mod = _make_sing_mod_from_gens(gens,"self_mod")
+    other_mod = _make_sing_mod_from_gens(module.gens(),"other_mod")
+    sing = mod + ";\n" + other_mod + ";\n"
+    sing  = sing + "int_mod = intersection(self_mod,other_mod); matrix int_mat = int_mod; int_mat"
+    poly_ring = gens[0][0].parent()
+    gens = _gens_from_sing_mod(poly_ring,singular.eval(sing),"int_mat")
+    return SingularModule(gens);
+    
+  def reduce(self,div):
+    pass;
+    
+  def contains(self,g):
+    pass;
+    
+  @classmethod
+  def from_relations(self,rels,ideal):
+    mod = SingularModule(_relation_generators(rels[0],ideal))
+    for rel in rels[1:]:
+      other_mod = SingularModule(_relation_generators(rel,ideal))
+      mod = mod.intersection(other_mod)
+    return mod;
+    
+  @classmethod
+  def from_relation(self,rel,ideal):
+    return SingularModule(_relation_generators(rel,ideal));
+  
 #Checked
 def _compute_p_relations(divisor,p):
   diffs = []
@@ -124,8 +207,18 @@ if __name__=="__main__":
   print "Ideal: ",ideal
   print "Gens: ",_relation_generators(rel,ideal)
   
-  print "Testing relations generator"
-  rels = [[x^2,x*y,z],[x,z^2,x+y]]
-  print "Rels: ",rels
-  print "Ideal: ",ideal
-  print "Gens: ",_relations_generators(rels,ideal)
+  
+  print "Testing mod string generator"
+  gens = [[x^4,C.zero(),x+y+z^3],[4*x*y*z,C.one(),y*x]]
+  print "Gens: ",gens
+  string = _make_sing_mod_from_gens(gens)
+  print singular.eval(string+";\n MD ;\n")
+  
+  print "Testing geting gens from singular modular"
+  print "Gens: ",gens
+  string = _make_sing_mod_from_gens(gens)
+  string = singular.eval(string+";\n matrix MM = MD;\n MM;")
+  gens = _gens_from_sing_mod(C,string,"MM")
+  print gens
+
+  
