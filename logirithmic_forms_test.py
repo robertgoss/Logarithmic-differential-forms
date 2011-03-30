@@ -3,6 +3,8 @@
 import unittest
 
 from logirithmic_forms import SingularModule
+from logirithmic_forms import homogenous_wieghts
+from logirithmic_forms import NotWieghtHomogeneousException
 
 
 from sage.rings.rational_field import QQ
@@ -86,16 +88,16 @@ class TestSingularModule(unittest.TestCase):
     gen_2_1 = x**4*y**3*z-x**3*y**3*z+x**2*y**4*z+4*y**5*z+y**4*z**2+x**5-x**4*z-x**3*z**2-4*x**2*y**2-2*x**2*y*z-x*y*z**2
     gen_3_1 = x**3*y**3*z-x**3*y*z+4*x**2*y**4*z+x**2*y**3*z**2+x**6-4*x**3*y**2-x**4*z-x**3*z**2-x**3*z-4*x**2*y*z+4*x*y**2*z-2*x**2*z**2-3*x*y*z**2+4*y**2*z**2-x*z**3+y*z**3
     gens = [[gen_1_1,gen_2_1,gen_3_1]]
-    self.assertEqual(gens[0][0],smI.gens[0][0])
-    self.assertEqual(gens[0][1],smI.gens[0][1])
-    self.assertEqual(gens[0][2],smI.gens[0][2])
-    
+    #Test this example
+    self.assertEqual(gens,smI.gens)
+
   def test_intersect_contains(self):
     x = self.x
     y = self.y
     z = self.z
     sm1 = SingularModule([[x,y+z,z**3-2*y],[x,y,z],[x,y,z**2]])
     sm2 = SingularModule([[x,y**2,z**3]])
+    #Assert the intersection is contained in both modules
     gens = (sm1.intersection(sm2)).gens
     for gen in gens:
       self.assertTrue(sm1.contains(gen))
@@ -110,12 +112,14 @@ class TestSingularModule(unittest.TestCase):
     sm2 = SingularModule([[x,y**2,z**3]])
     sm_1_2 = sm1.intersection(sm2)
     sm_2_1 = sm2.intersection(sm1)
+    #Assert that equals is symetric
     self.assertTrue(sm_1_2.equals(sm_2_1))
       
   def test_equals(self):
     x = self.x
     y = self.y
     z = self.z
+    #Assert these are equal
     sm1 = SingularModule([[x,y+z,z**3-2*y],[x,y,z],[x,y,z**2]])
     sm2 = SingularModule([[x,y,z],[x,y+z,z**3-2*y],[x,y,z**2]])
     self.assertTrue(sm1.equals(sm2))
@@ -126,7 +130,43 @@ class TestSingularModule(unittest.TestCase):
     z = self.z
     sm1 = SingularModule([[x,y+z,z**3-2*y],[x,y,z],[x,y,z**2]])
     sm2 = SingularModule([[x,y,z]])
+    #Assert these are not equal
     self.assertFalse(sm1.equals(sm2))
+    
+    
+    
+class Test_Homogeneous_Wieghts(unittest.TestCase):
+
+  def setUp(self):
+    self.poly_ring = PolynomialRing(QQ,"x",3);
+    self.x = self.poly_ring.gens()[0];
+    self.y = self.poly_ring.gens()[1];
+    self.z = self.poly_ring.gens()[2];
+  
+  def test_homogenous(self):
+    x = self.x
+    y = self.y
+    z = self.z
+    divisor = x*y*z + x**3 + z**3
+    wieghts = homogenous_wieghts(divisor)
+    #Test this works with a homogenous divisor
+    self.assertEquals(wieghts,[1,1,1]);
+    
+  def test_weighted_homogenous(self):
+    x = self.x
+    y = self.y
+    z = self.z
+    divisor = x**2*y-z**2
+    wieghts = homogenous_wieghts(divisor)
+    #Test this works with a weighted homogenous divisor
+    self.assertEquals(wieghts,[1,2,2])
+  
+  def test_not_homogenous(self):
+    x = self.x
+    y = self.y
+    z = self.z
+    divisor = x**2*y-x**3 + z +y**2;
+    self.assertRaises(NotWieghtHomogeneousException,homogenous_wieghts,divisor)
     
 if __name__=="__main__":
   unittest.main()

@@ -9,9 +9,15 @@ from sage.interfaces.singular import Singular
 from sage.rings.integer import Integer
 from sage.rings.rational import Rational
 
+
+from sage.numerical.mip import MixedIntegerLinearProgram
+
 #TODO - log forms class
 
 class NotImplementedException(Exception):
+  pass
+
+class NotWieghtHomogeneousException(Exception):
   pass
   
 def _sing_ring(ring,var_name="x"):
@@ -89,6 +95,44 @@ def _gens_from_sing_mod(poly_ring,mod_string,mat_name='MM'):
       gen.append(mat[(j+1,i+1)])
     gens.append(gen)
   return gens;
+ 
+  
+def homogenous_wieghts(divisor):
+  hw = []
+  milp = MixedIntegerLinearProgram(maximization=False)
+  #Use cts to see if solvable - sometimes using intergers in an unsolvable causes a unhandled sigfault
+  wieghts = milp.new_variable(real=True)
+  milp.add_constraint(wieghts[0]>=1)
+  for i in range(divisor.parent().ngens()):
+    milp.add_constraint(wieghts[i+1]>=1)
+  for ex in divisor.exponents():
+    rel = -wieghts[0]
+    for ex_i,ex_m in enumerate(ex):
+      rel = rel + ex_m*wieghts[ex_i+1]
+    milp.add_constraint(rel==0)
+  try:
+    milp.show()
+    milp.solve()
+    #Redo with integers to get actual solution
+    milp_i = MixedIntegerLinearProgram(maximization=False)
+    wieghts_i = milp_i.new_variable(integer=True)
+    milp_i.add_constraint(wieghts_i[0]>=1)
+    for i in range(divisor.parent().ngens()):
+      milp_i.add_constraint(wieghts_i[i+1]>=1)
+    for ex in divisor.exponents():
+      rel = -wieghts_i[0]
+      for ex_i,ex_m in enumerate(ex):
+        rel = rel + ex_m*wieghts_i[ex_i+1]
+      milp_i.add_constraint(rel==0)
+    milp_i.solve()
+    for i,v in milp_i.get_values(wieghts_i).iteritems():
+      if not i==0:
+        hw.append(v)
+  except:
+    raise NotWieghtHomogeneousException
+  return hw
+  
+  
 
 class SingularModule(SageObject):
 
@@ -149,3 +193,7 @@ class SingularModule(SageObject):
       if equal:
         return True
     return False
+    
+class LogarithmicDifferentialForms(SageObject):
+  def __init__(divisor):
+    self.divisor = divisor
