@@ -92,6 +92,7 @@ class SingularModule(SageObject):
   def __init__(self,gens):
     self.gens = gens
     self.poly_ring = gens[0][0].parent()
+    self.rank = len(gens[0])
     
   def create_ring_str(self):
     return "ring r=0,x(1.."+str(self.poly_ring.ngens())+"),dp;\n"
@@ -147,10 +148,18 @@ class SingularModule(SageObject):
         return True
     return False
     
+  def ambient_free_module(self):
+    return SingularModule.create_free_module(self.rank,self.poly_ring)
+    
   @classmethod
-  def create_from_relation(cls,relation):
+  def create_free_module(cls,n,poly_ring):
+    gen = [ poly_ring.one() for _ in range(n) ]
+    return SingularModule(gen);
+    
+  @classmethod
+  def create_from_relation(cls,relation,ideal):
     raise NotImplementedException()
     
   @classmethod
-  def create_from_relations(cls,relations):
+  def create_from_relations(cls,relations,ideals):
     raise NotImplementedException()

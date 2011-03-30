@@ -131,6 +131,14 @@ class TestSingularModule(unittest.TestCase):
     #Assert these are not equal
     self.assertFalse(sm1.equals(sm2))
     
+  def test_ambient_free_module(self):
+    x = self.x
+    y = self.y
+    z = self.z
+    one = self.poly_ring.one()
+    sm1 = SingularModule([[x,y+z,z**3-2*y],[x,y,z],[x,y,z**2]])
+    self.assertEqual(sm1.ambient_free_module().gens,[one,one,one])
+    
      
 if __name__=="__main__":
   unittest.main()
