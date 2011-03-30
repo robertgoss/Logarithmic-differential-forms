@@ -8,6 +8,10 @@ from logarithmic_forms import convert_polynomial_to_symbolic
 from logarithmic_forms import convert_symbolic_to_polynomial
 
 
+from sage.rings.rational_field import QQ
+from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
+from sage.symbolic.ring import var
+
 
     
 class TestHomogeneousWieghts(unittest.TestCase):

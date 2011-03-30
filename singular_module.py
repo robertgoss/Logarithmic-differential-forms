@@ -1,3 +1,7 @@
+import sage.all
+
+from sage.structure.sage_object import SageObject
+
 from sage.interfaces.singular import Singular
 
 from sage.rings.integer import Integer

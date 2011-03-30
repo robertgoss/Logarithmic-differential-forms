@@ -4,8 +4,6 @@ import sage.all
 
 from sage.structure.sage_object import SageObject
 
-from singular_module import SingularModule
-
 from sage.numerical.mip import MixedIntegerLinearProgram
 
 from sage.symbolic.ring import var
@@ -14,6 +12,8 @@ from sage.tensor.coordinate_patch import CoordinatePatch
 from sage.tensor.differential_forms import DifferentialForms
 
 #TODO - log forms class
+
+from singular_module import SingularModule
 
 class NotImplementedException(Exception):
   pass
@@ -92,7 +92,7 @@ def _log_1_form_rels(divisor):
       for k in range(n):
         if k==i:
           rel.append(divisor.derivative(poly_ring.gens()[j]))
-        if k==j
+        if k==j:
           rel.append(divisor.derivative(-poly_ring.gens()[i]))
         if k!=i and k!=j:
           rel.append(poly_ring.zero())
