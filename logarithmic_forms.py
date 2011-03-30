@@ -118,7 +118,6 @@ def homogenous_wieghts(divisor):
       rel = rel + ex_m*wieghts[ex_i+1]
     milp.add_constraint(rel==0)
   try:
-    milp.show()
     milp.solve()
     #Redo with integers to get actual solution
     milp_i = MixedIntegerLinearProgram(maximization=False)
@@ -138,11 +137,29 @@ def homogenous_wieghts(divisor):
     raise NotWieghtHomogeneousException
   return hw
   
-def convert_polnomial_to_symbolic(poly,sym_vars)
-  raise NotImplementedException
+def convert_polynomial_to_symbolic(poly,sym_vars):
+  sym_poly = 0
+  coeff = poly.coefficients()
+  expon = poly.exponents()
+  for c,e in zip(coeff,expon):
+    mon = c
+    for e_i,e_m in enumerate(e):
+      mon = mon * sym_vars[e_i]**e_m
+    sym_poly = sym_poly + mon
+  return sym_poly
   
-def convert_polnomial_to_symbolic(symbolic_poly,sym_vars,poly_ring)
-  raise NotImplementedException
+def convert_symbolic_to_polynomial(symbolic_poly,poly_ring):
+  base_ring = poly_ring.base_ring()
+  poly = symbolic_poly.polynomial(base_ring)
+  coeff = poly.coefficients()
+  expon = poly.exponents()
+  final_poly = poly_ring.zero()
+  for c,e in zip(coeff,expon):
+    mon = c*poly_ring.one()
+    for e_i,e_m in enumerate(e):
+      mon = mon * poly_ring.gens()[e_i]**e_m
+    final_poly = final_poly + mon
+  return final_poly
 
 class SingularModule(SageObject):
 
