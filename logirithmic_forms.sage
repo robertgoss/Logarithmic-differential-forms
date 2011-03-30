@@ -19,7 +19,7 @@ def _possible_gens(coeffs,ideal,var=0):
     poss_gens.append(g//coeffs[var])
   return poss_gens
   
-#Checked
+#Checked 
 def _relation_generators(coeffs,ideal):
   poly_ring = coeffs[0].parent()
   #posible first vaules
@@ -39,12 +39,16 @@ def _relation_generators(coeffs,ideal):
       poss_gens.append([poly_ring.zero()]+red_gen)
   return poss_gens
   
+def _sing_ring(ring,var_name="x"):
+  return "ring r = 0,(x(1.."+str(n_vars)+")),dp;\n"
+
+  
 #Checked
 def _make_sing_mod_from_gens(gens,mod_name="MD"):
   poly_ring = gens[0][0].parent()
   n_vars = poly_ring.ngens();
   #create ring
-  mod = "ring r = 0,(x(1.."+str(n_vars)+")),dp;\n"
+  mod = _sing_ring(poly_ring)
   mod = mod + "module "+str(mod_name)+" = "
   first_gen = true
   for gen in gens:
@@ -73,6 +77,7 @@ def _make_sing_mod_from_gens(gens,mod_name="MD"):
           if ex_m != 0:
             mod = mod + "*x("+str(ex_i+1)+")^"+str(ex_m);
     mod = mod + "]"
+  mod = mod + ";\n"
   return mod
   
 #Checked
@@ -134,6 +139,9 @@ class SingularModule():
     poly_ring = gens[0][0].parent()
     gens = _gens_from_sing_mod(poly_ring,singular.eval(sing),"int_mat")
     return SingularModule(gens);
+    
+  def create_ring_str(self):
+    return _sing_ring
     
   def reduce(self,div):
     pass;
