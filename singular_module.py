@@ -7,6 +7,8 @@ from sage.interfaces.singular import Singular
 from sage.rings.integer import Integer
 from sage.rings.rational import Rational
 
+from sage.rings.ideal import Ideal
+
 class NotImplementedException(Exception):
   pass
 
@@ -86,6 +88,38 @@ def _gens_from_sing_mod(poly_ring,mod_string,mat_name='MM'):
     gens.append(gen)
   return gens;
  
+def _possible_gens(coeffs,ideal,var=0):
+  coeff_gens = list(ideal.gens())
+  poly_ring = coeffs[var].parent()
+  if coeffs[var]==poly_ring.zero():
+    return []
+  for i,coeff in enumerate(coeffs):
+    if not i==var:
+      coeff_gens.append(coeff)
+  poss_ideal = (Ideal(poly_ring,coeff_gens)).intersection(Ideal(poly_ring,coeffs[var]))
+  poss_gens = []
+  for g in poss_ideal.gens():
+    poss_gens.append(g//coeffs[var])
+  return poss_gens
+
+def _generators_from_relation(rel_coeffs,ideal):
+  poly_ring = rel_coeffs[0].parent()
+  #posible first vaules
+  poss_gens_0 = _possible_gens(rel_coeffs,ideal,0)
+  #Particulars for thise values
+  part_ideal = Ideal(poly_ring,rel_coeffs[1:]+list(ideal.gens()))
+  poss_gens = []
+  for g in poss_gens_0:
+    part_lift = (g*rel_coeffs[0]).lift(part_ideal)
+    part_lift = part_lift[:(len(rel_coeffs)-1)] # Drop ideal stuff
+    poss_gens.append([g]+part_lift)
+  #Solve for when first value is zero
+  if len(rel_coeffs)>1:
+    red_coeffs = rel_coeffs[1:]
+    red_gens = _generators_from_relation(red_coeffs,ideal)
+    for red_gen in red_gens:
+      poss_gens.append([poly_ring.zero()]+red_gen)
+  return poss_gens
 
 class SingularModule(SageObject):
 
@@ -148,18 +182,32 @@ class SingularModule(SageObject):
         return True
     return False
     
+  def reduce_generators(self):
+    raise NotImplementedException();
+    
   def ambient_free_module(self):
     return SingularModule.create_free_module(self.rank,self.poly_ring)
+    
+  def is_free(self):
+    unit = [ self.poly_ring.one() for _ in range(self.rank) ]
+    return self.contains(unit)
     
   @classmethod
   def create_free_module(cls,n,poly_ring):
     gen = [ poly_ring.one() for _ in range(n) ]
-    return SingularModule(gen);
+    return SingularModule([gen]);
     
   @classmethod
   def create_from_relation(cls,relation,ideal):
-    raise NotImplementedException()
+    gens = _generators_from_relation(relation,ideal)
+    return SingularModule(gens)
     
   @classmethod
   def create_from_relations(cls,relations,ideals):
-    raise NotImplementedException()
+    rank = len(relations[0])
+    poly_ring = relations[0][0].parent()
+    module = SingularModule.create_free_module(rank,poly_ring)
+    for rel,ideal in zip(relations,ideals):
+      rel_mod = SingularModule.create_from_relation(rel,ideal)
+      module = module.intersection(rel_mod)
+    return module

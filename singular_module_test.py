@@ -8,6 +8,8 @@ from sage.rings.rational_field import QQ
 from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
 from sage.symbolic.ring import var
 
+from sage.rings.ideal import Ideal
+
 class TestSingularModule(unittest.TestCase):
 
   def setUp(self):
@@ -137,8 +139,60 @@ class TestSingularModule(unittest.TestCase):
     z = self.z
     one = self.poly_ring.one()
     sm1 = SingularModule([[x,y+z,z**3-2*y],[x,y,z],[x,y,z**2]])
-    self.assertEqual(sm1.ambient_free_module().gens,[one,one,one])
+    self.assertEqual(sm1.ambient_free_module().gens,[[one,one,one]])
     
+  def test_is_free(self):
+    free = SingularModule.create_free_module(3,self.poly_ring)
+    self.assertTrue(free.is_free())
+    
+  def test_is_free_not(self):
+    x = self.x
+    y = self.y
+    z = self.z
+    sm1 = SingularModule([[x,y,z]])
+    self.assertFalse(sm1.is_free())
+    
+  def test_create_relation(self):
+    x = self.x
+    y = self.y
+    z = self.z
+    one = self.poly_ring.one()
+    zero = self.poly_ring.zero()
+    relation = [x**2,one+z**2,y]
+    ideal = Ideal(self.poly_ring,[x**2*y-z**2])
+    mod = SingularModule.create_from_relation(relation,ideal)
+    true_mod = SingularModule([[one,-one,x**2],[zero,y,-(one+z**2)],
+                             [zero,z**2,x**2*(z**2+1)],[zero,zero,x**2*y-z**2]])
+    self.assertTrue(mod.equals(true_mod))
+    
+  def test_create_relation_satisfy(self):
+    x = self.x
+    y = self.y
+    z = self.z
+    zero = self.poly_ring.zero()
+    relation = [x+x**4-y,(y+z)**3,-2*y+self.poly_ring.one()]
+    ideal = Ideal(self.poly_ring,[x**2*y-z**2])
+    mod = SingularModule.create_from_relation(relation,ideal)
+    for gen in mod.gens:
+      sum = zero
+      for g,rel in zip(gen,relation):
+        sum = sum +g*rel
+    self.assertTrue(sum in ideal)
+    
+  def test_create_relations_satisfy(self):
+    x = self.x
+    y = self.y
+    z = self.z
+    zero = self.poly_ring.zero()
+    relations = [[x**2,z*y],[y**2,-x]]
+    ideals = [Ideal(self.poly_ring,[x**2*y-z**2]),Ideal(self.poly_ring,[x*y-z])]
+    mod = SingularModule.create_from_relations(relations,ideals)
+    for relation,ideal in zip(relations,ideals):
+      for gen in mod.gens:
+        sum = zero
+        for g,rel in zip(gen,relation):
+          sum = sum +g*rel
+      self.assertTrue(sum in ideal)
      
 if __name__=="__main__":
   unittest.main()
