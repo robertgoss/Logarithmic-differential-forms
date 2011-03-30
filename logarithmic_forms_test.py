@@ -2,9 +2,9 @@
 
 import unittest
 
-from logirithmic_forms import SingularModule
-from logirithmic_forms import homogenous_wieghts
-from logirithmic_forms import NotWieghtHomogeneousException
+from logarithmic_forms import SingularModule
+from logarithmic_forms import homogenous_wieghts
+from logarithmic_forms import NotWieghtHomogeneousException
 
 
 from sage.rings.rational_field import QQ

@@ -9,8 +9,12 @@ from sage.interfaces.singular import Singular
 from sage.rings.integer import Integer
 from sage.rings.rational import Rational
 
-
 from sage.numerical.mip import MixedIntegerLinearProgram
+
+from sage.symbolic.ring import var
+
+from sage.tensor.coordinate_patch import CoordinatePatch
+from sage.tensor.differential_forms import DifferentialForms
 
 #TODO - log forms class
 
@@ -18,6 +22,9 @@ class NotImplementedException(Exception):
   pass
 
 class NotWieghtHomogeneousException(Exception):
+  pass
+  
+class SymbolicNotPolynomialException(Exception):
   pass
   
 def _sing_ring(ring,var_name="x"):
@@ -126,13 +133,16 @@ def homogenous_wieghts(divisor):
       milp_i.add_constraint(rel==0)
     milp_i.solve()
     for i,v in milp_i.get_values(wieghts_i).iteritems():
-      if not i==0:
-        hw.append(v)
+      hw.append(v)
   except:
     raise NotWieghtHomogeneousException
   return hw
   
+def convert_polnomial_to_symbolic(poly,sym_vars)
+  raise NotImplementedException
   
+def convert_polnomial_to_symbolic(symbolic_poly,sym_vars,poly_ring)
+  raise NotImplementedException
 
 class SingularModule(SageObject):
 
@@ -195,5 +205,27 @@ class SingularModule(SageObject):
     return False
     
 class LogarithmicDifferentialForms(SageObject):
-  def __init__(divisor):
+  def __init__(divisor,var_name="z"):
     self.divisor = divisor
+    self.poly_ring = divisor.parent()
+    hw = homogenous_wieghts(divisor)
+    self.wieghts = hw[1:]
+    self.degree = hw[0]
+    #Setup patch for differential form
+    var_names = [ var_name + str(i) for i in range(self.poly_ring.ngens())]
+    self.form_vars = var(join(var_names,","))
+    self.form_patch = CoordinatePatch(self.form_vars)
+    self.form_space = DifferentialForms(self.form_patch)
+    #compute the generators of the logarithmic p-forms
+    self._p_modules = {} # modules of logarithmic differential p-forms
+    self._p_gens = {} # the generators of the module of logarithmic differential p-forms
+    
+  def p_form_generators(p):
+    #the generators of the module of logarithmic differential p-forms
+    if p in self._p_gens.keys():
+      return self._p_gens[p]
+    if not p in self._p_modules.keys():
+      _compute_p_form_generators(p)
+    self._p_gens[p] = []
+    for gen in self._p_modules[p].gens:
+      pass;
