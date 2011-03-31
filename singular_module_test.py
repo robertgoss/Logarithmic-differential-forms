@@ -38,7 +38,7 @@ class TestSingularModule(unittest.TestCase):
     y = self.y
     z = self.z
     sm = SingularModule([[x,2*y**2,3*z**3]])
-    self.assertEqual(sm.create_module_str("MT"),"module MT=[1*x(1)^1,2*x(2)^2,3*x(3)^3];\n")
+    self.assertEqual(sm.create_module_str("MT"),"module MT=[1*x(1)^1,2*x(2)^2,3*x(3)^3];\n groebner(MT);\n")
     
   def test_contains_zero(self):
     x = self.x
@@ -138,8 +138,9 @@ class TestSingularModule(unittest.TestCase):
     y = self.y
     z = self.z
     one = self.poly_ring.one()
+    zero = self.poly_ring.zero()
     sm1 = SingularModule([[x,y+z,z**3-2*y],[x,y,z],[x,y,z**2]])
-    self.assertEqual(sm1.ambient_free_module().gens,[[one,one,one]])
+    self.assertEqual(sm1.ambient_free_module().gens,[[one,zero,zero],[zero,one,zero],[zero,zero,one]])
     
   def test_is_free(self):
     free = SingularModule.create_free_module(3,self.poly_ring)
@@ -193,7 +194,33 @@ class TestSingularModule(unittest.TestCase):
         for g,rel in zip(gen,relation):
           sum = sum +g*rel
       self.assertTrue(sum in ideal)
-     
+      
+  def  test_create_singular_free(self):
+    free_matrix = "MM[1,1]=1\nMM[1,2]=0\nMM[1,3]=0\n"
+    free_matrix = free_matrix+"MM[2,1]=0\nMM[2,2]=1\nMM[2,3]=0\n"
+    free_matrix = free_matrix+"MM[3,1]=0\nMM[3,2]=0\nMM[3,3]=1\n"
+    free_c = SingularModule.create_from_singular_matrix(self.poly_ring,free_matrix)
+    free = SingularModule.create_free_module(3,self.poly_ring)
+    self.assertTrue(free.equals(free_c))
+    
+  def test_create_singular(self):
+    out = "mat_inter[1,1]=0\n"
+    out = out + "mat_inter[1,2]=0\n"
+    out = out + "mat_inter[1,3]=x(1)*x(2)*x(3)\n"
+    out = out + "mat_inter[2,1]=x(2)\n"
+    out = out + "mat_inter[2,2]=0\n"
+    out = out + "mat_inter[2,3]=0\n"
+    out = out + "mat_inter[3,1]=-x(3)\n"
+    out = out + "mat_inter[3,2]=x(3)\n"
+    out = out + "mat_inter[3,3]=0\n"
+    mod = SingularModule.create_from_singular_matrix(self.poly_ring,out,"mat_inter")
+    x = self.x
+    y = self.y
+    z = self.z
+    zero = self.poly_ring.zero()
+    mod_true= [[zero,y,-z],[zero,zero,z],[x*y*z,zero,zero]]
+    self.assertEqual(mod.gens,mod_true)
+
 if __name__=="__main__":
   unittest.main()
     

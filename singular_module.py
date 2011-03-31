@@ -45,48 +45,10 @@ def _sing_mod(gens,mod_name="MD",vars_name="x"):
           if ex_m != 0:
             mod = mod + "*"+str(vars_name)+"("+str(ex_i+1)+")^"+str(ex_m);
     mod = mod + "]"
-  mod = mod + ";\n"
+  mod = mod + ";\n "
+  mod = mod + "groebner("+str(mod_name)+");\n"
   return mod
 
-def _gens_from_sing_mod(poly_ring,mod_string,mat_name='MM'):
-  mat = {}
-  for line in mod_string.split('\n'):
-    if line.find(mat_name)==0:
-      indices = line.split('[')[1]
-      indices = indices.split(']')[0]
-      indices = indices.split(',')
-      indices = [ int(i) for i in indices ]
-      eqn = line.split('=')[1]
-      eq = poly_ring.zero()
-      for mon_pos in eqn.split('+'):
-        for i,mon in enumerate(mon_pos.split('-')):
-          if i==0:
-            coeff = poly_ring.one()
-          else:
-            coeff = -poly_ring.one()
-          for part in mon.split('*'):
-            try:
-              coeff = coeff * Rational(part)
-            except:
-              num = part.split('(')[1]
-              num = num.split(')')[0]
-              num = Integer(num)
-              try:
-                pow = Integer(part.split('^')[1])
-              except:
-                pow = 1
-              coeff = coeff * poly_ring.gens()[num-1]**pow;
-          eq = eq + coeff;
-      mat[(indices[0],indices[1])] = eq
-  ngens = max([ k[1] for k in mat.iterkeys() ])
-  nel = max([ k[0] for k in mat.iterkeys() ])
-  gens = []
-  for i in range(ngens):
-    gen = []
-    for j in range(nel):
-      gen.append(mat[(j+1,i+1)])
-    gens.append(gen)
-  return gens;
  
 def _possible_gens(coeffs,ideal,var=0):
   coeff_gens = list(ideal.gens())
@@ -109,10 +71,13 @@ def _generators_from_relation(rel_coeffs,ideal):
   #Particulars for thise values
   part_ideal = Ideal(poly_ring,rel_coeffs[1:]+list(ideal.gens()))
   poss_gens = []
-  for g in poss_gens_0:
-    part_lift = (g*rel_coeffs[0]).lift(part_ideal)
-    part_lift = part_lift[:(len(rel_coeffs)-1)] # Drop ideal stuff
-    poss_gens.append([g]+part_lift)
+  if not rel_coeffs[0].is_zero():
+    for g in poss_gens_0:
+      part_lift = (g*rel_coeffs[0]).lift(part_ideal)
+      part_lift = part_lift[:(len(rel_coeffs)-1)] # Drop ideal stuff
+      poss_gens.append([g]+part_lift)
+  else:
+    poss_gens = [ [poly_ring.one()] + [poly_ring.zero() for _ in rel_coeffs[1:]] ]
   #Solve for when first value is zero
   if len(rel_coeffs)>1:
     red_coeffs = rel_coeffs[1:]
@@ -164,8 +129,8 @@ class SingularModule(SageObject):
     all_code = ring+moduleA+moduleB+intersect_code;
     singular = Singular()
     output = singular.eval(all_code)
-    gens = _gens_from_sing_mod(self.poly_ring,output,"mat_inter");
-    return SingularModule(gens)
+    mod_iter = SingularModule.create_from_singular_matrix(self.poly_ring,output,"mat_inter");
+    return mod_iter
     
   def equals(self,module):
     equal = True
@@ -189,17 +154,68 @@ class SingularModule(SageObject):
     return SingularModule.create_free_module(self.rank,self.poly_ring)
     
   def is_free(self):
-    unit = [ self.poly_ring.one() for _ in range(self.rank) ]
-    return self.contains(unit)
+    return self.equals(SingularModule.create_free_module(self.rank,self.poly_ring))
     
   @classmethod
   def create_free_module(cls,n,poly_ring):
-    gen = [ poly_ring.one() for _ in range(n) ]
-    return SingularModule([gen]);
+    gens = []
+    for i in range(n):
+      gen = [ poly_ring.zero() for _ in range(n) ]
+      gen[i]=poly_ring.one()
+      gens.append(gen)
+    return SingularModule(gens);
     
   @classmethod
   def create_from_relation(cls,relation,ideal):
     gens = _generators_from_relation(relation,ideal)
+    return SingularModule(gens)
+    
+  @classmethod
+  def create_from_singular_matrix(cls,poly_ring,singular_output,matrix_name="MM"):
+    #print "Returning gens"
+    #print singular_output
+    mat = {}
+    for line in singular_output.split('\n'):
+      if line.find(matrix_name)==0:
+        indices = line.split('[')[1]
+        indices = indices.split(']')[0]
+        indices = indices.split(',')
+        indices = [ int(i) for i in indices ]
+        eqn = line.split('=')[1]
+        eq = poly_ring.zero()
+        for mon_pos in eqn.split('+'):
+          for i,mon in enumerate(mon_pos.split('-')):
+            if i==0:
+              coeff = poly_ring.one()
+            else:
+              coeff = -poly_ring.one()
+            for part in mon.split('*'):
+              try:
+                coeff = coeff * Rational(part)
+              except:
+                try:
+                  num = part.split('(')[1]
+                  num = num.split(')')[0]
+                  num = Integer(num)
+                  try:
+                    pow = Integer(part.split('^')[1])
+                  except:
+                    pow = 1
+                  coeff = coeff * poly_ring.gens()[num-1]**pow;
+                except:
+                  pass
+            if mon!='':
+              eq = eq + coeff;
+        mat[(indices[0],indices[1])] = eq
+    ngens = max([ k[1] for k in mat.iterkeys() ])
+    nel = max([ k[0] for k in mat.iterkeys() ])
+    gens = []
+    for i in range(ngens):
+      gen = []
+      for j in range(nel):
+        gen.append(mat[(j+1,i+1)])
+      gens.append(gen)
+    #print "Gens: ",gens
     return SingularModule(gens)
     
   @classmethod
@@ -208,6 +224,9 @@ class SingularModule(SageObject):
     poly_ring = relations[0][0].parent()
     module = SingularModule.create_free_module(rank,poly_ring)
     for rel,ideal in zip(relations,ideals):
+      print "Rel: ",rel
       rel_mod = SingularModule.create_from_relation(rel,ideal)
+      print "Rel gens: ",rel_mod.gens
       module = module.intersection(rel_mod)
+      print "partial: ",module.gens
     return module
