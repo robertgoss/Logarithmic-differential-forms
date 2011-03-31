@@ -6,10 +6,15 @@ from sage.structure.sage_object import SageObject
 
 from sage.numerical.mip import MixedIntegerLinearProgram
 
-from sage.symbolic.ring import var
+from sage.sets.set import Set
 
 from sage.tensor.coordinate_patch import CoordinatePatch
 from sage.tensor.differential_forms import DifferentialForms
+from sage.tensor.differential_form_element import DifferentialForm
+
+from sage.rings.rational_field import QQ
+from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
+from sage.symbolic.ring import var
 
 #TODO - log forms class
 
@@ -87,18 +92,33 @@ def _log_1_form_rels(divisor):
   n = poly_ring.ngens()
   rels = []
   for i in range(n):
-    for j in range(i,n):
+    for j in range(i+1,n):
       rel = []
       for k in range(n):
         if k==i:
-          rel.append(divisor.derivative(poly_ring.gens()[j]))
+          rel.append(divisor.derivative(poly_ring.gens()[i]))
         if k==j:
-          rel.append(divisor.derivative(-poly_ring.gens()[i]))
+          rel.append(-divisor.derivative(poly_ring.gens()[j]))
         if k!=i and k!=j:
           rel.append(poly_ring.zero())
       rels.append(rel)
   return rels
-    
+  
+def _make_poly_1_form(polys,differential_forms,sym_vars):
+  form = DifferentialForm(differential_forms,1)
+  for i,poly in enumerate(polys):
+    form[i] = convert_polynomial_to_symbolic(poly,sym_vars)
+  return form
+  
+def skew_iter(n,depth=1,start=0):
+  if depth == 1:
+    for i in range(start,n):
+      yield [i]
+  else:
+    for i in range(start,n):
+      for v in skew_iter(n,depth-1,start+i+1):
+        yield [i]+v
+      
 class LogarithmicDifferentialForms(SageObject):
   def __init__(self,divisor,var_name="z"):
     self.divisor = divisor
@@ -108,7 +128,7 @@ class LogarithmicDifferentialForms(SageObject):
     self.degree = hw[0]
     #Setup patch for differential form
     var_names = [ var_name + str(i) for i in range(self.poly_ring.ngens())]
-    self.form_vars = var(join(var_names,","))
+    self.form_vars = var(",".join(var_names))
     self.form_patch = CoordinatePatch(self.form_vars)
     self.form_space = DifferentialForms(self.form_patch)
     #compute the generators of the logarithmic p-forms
@@ -117,20 +137,61 @@ class LogarithmicDifferentialForms(SageObject):
     
   def _compute_1_form_generators(self):
     rels = _log_1_form_rels(self.divisor)
-    self._p_modules[1] = SingularModule.create_from_relations(rels);
+    ideals = [[self.divisor]*self.poly_ring for _ in range(len(rels))]
+    self._p_modules[1] = SingularModule.create_from_relations(rels,ideals);
     
   def _compute_p_form_generators(self,p):
+    if p==0:
+      self._p_modules[0] = SingularModule([[self.divisor]])
+      return
     if p==1:
-      self._compute_1_form_generators(self)
+      self._compute_1_form_generators()
     else:
-      raise NotImplementedException();
+      raise NotImplementedException()
+      if not 1 in self._p_modules.keys():
+        self._compute_1_form_generators()
+      #compute wedges of 1 forms
+      gens_1_forms = self._p_modules[1].gens
+      diff_1_forms = [_make_poly_1_form(polys,self.form_space,self.form_vars) for polys in gens_1_forms]
+      diff_p_forms = []
+      for s in Set(range(len(gens_1_forms))).subsets(p):
+        p_form = DifferentialForm(self.form_space,0,1)
+        for i in s:
+          p_form = p_form.wedge(diff_1_forms[i])
+        diff_p_forms.append(p_form)
+      gens_p_forms = []
+      for p_form in diff_p_forms:
+        gen_p_forms = []
+        for v in skew_iter(self.poly_ring.ngens(),p):
+          gen_p_forms.append(p_form[tuple(v)])
+        gens_p_forms.append(gen_p_forms)
+      self._p_modules[p] = SingularModule(gens_p_forms)
     
   def p_form_generators(self,p):
     #the generators of the module of logarithmic differential p-forms
     if p in self._p_gens.keys():
       return self._p_gens[p]
     if not p in self._p_modules.keys():
-      _compute_p_form_generators(p)
+      self._compute_p_form_generators(p)
+    if p==0:
+      zero_form = DifferentialForm(self.form_space,0,1);
+      self._p_gens[0] = [zero_form]
+      return self._p_gens[0]
     self._p_gens[p] = []
     for gen in self._p_modules[p].gens:
-      pass;
+      p_form = DifferentialForm(self.form_space,p);
+      for i,v in enumerate(skew_iter(self.poly_ring.ngens(),p)):
+        p_form[tuple(v)] = gen[i]/self.divisor
+      self._p_gens[p].append(p_form)
+    return self._p_gens[p]
+    
+if __name__=="__main__":
+  C = PolynomialRing(QQ,"x,y,z")
+  x = C.gens()[0]
+  y = C.gens()[1]
+  z = C.gens()[2]
+  logdf = LogarithmicDifferentialForms(x*y*z)
+  print logdf.p_form_generators(0)
+  print logdf.p_form_generators(1)
+  print logdf.p_form_generators(2)
+  print logdf.p_form_generators(3)
