@@ -172,8 +172,6 @@ class SingularModule(SageObject):
     
   @classmethod
   def create_from_singular_matrix(cls,poly_ring,singular_output,matrix_name="MM"):
-    #print "Returning gens"
-    #print singular_output
     mat = {}
     for line in singular_output.split('\n'):
       if line.find(matrix_name)==0:
@@ -215,7 +213,6 @@ class SingularModule(SageObject):
       for j in range(nel):
         gen.append(mat[(j+1,i+1)])
       gens.append(gen)
-    #print "Gens: ",gens
     return SingularModule(gens)
     
   @classmethod
@@ -224,9 +221,6 @@ class SingularModule(SageObject):
     poly_ring = relations[0][0].parent()
     module = SingularModule.create_free_module(rank,poly_ring)
     for rel,ideal in zip(relations,ideals):
-      print "Rel: ",rel
       rel_mod = SingularModule.create_from_relation(rel,ideal)
-      print "Rel gens: ",rel_mod.gens
       module = module.intersection(rel_mod)
-      print "partial: ",module.gens
     return module

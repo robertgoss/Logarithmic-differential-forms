@@ -8,6 +8,8 @@ from sage.numerical.mip import MixedIntegerLinearProgram
 
 from sage.sets.set import Set
 
+from sage.rings.rational import Rational
+
 from sage.tensor.coordinate_patch import CoordinatePatch
 from sage.tensor.differential_forms import DifferentialForms
 from sage.tensor.differential_form_element import DifferentialForm
@@ -75,6 +77,11 @@ def convert_polynomial_to_symbolic(poly,sym_vars):
   return sym_poly
   
 def convert_symbolic_to_polynomial(symbolic_poly,poly_ring):
+  try:
+    c = Rational(symbolic_poly)
+    return c*poly_ring.one()
+  except:
+    pass
   base_ring = poly_ring.base_ring()
   poly = symbolic_poly.polynomial(base_ring)
   coeff = poly.coefficients()
@@ -147,7 +154,6 @@ class LogarithmicDifferentialForms(SageObject):
     if p==1:
       self._compute_1_form_generators()
     else:
-      raise NotImplementedException()
       if not 1 in self._p_modules.keys():
         self._compute_1_form_generators()
       #compute wedges of 1 forms
@@ -161,10 +167,11 @@ class LogarithmicDifferentialForms(SageObject):
         diff_p_forms.append(p_form)
       gens_p_forms = []
       for p_form in diff_p_forms:
-        gen_p_forms = []
+        gen_p_form = []
         for v in skew_iter(self.poly_ring.ngens(),p):
-          gen_p_forms.append(p_form[tuple(v)])
-        gens_p_forms.append(gen_p_forms)
+          poly = convert_symbolic_to_polynomial(p_form[tuple(v)],self.poly_ring)
+          gen_p_form.append(poly)
+        gens_p_forms.append(gen_p_form)
       self._p_modules[p] = SingularModule(gens_p_forms)
     
   def p_form_generators(self,p):
