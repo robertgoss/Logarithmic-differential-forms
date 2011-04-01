@@ -77,6 +77,15 @@ class TestSingularModule(unittest.TestCase):
     self.assertFalse(sm.contains([y,y,y]))
     self.assertFalse(sm.contains([z,y,x]))
     
+  def test_contains_fail_multiple(self):
+    x = self.x
+    y = self.y
+    z = self.z
+    one = self.poly_ring.one()
+    sm = SingularModule([[x**2,x*y,x*z]])
+    #Detect that this is not contianed even though a multiple is
+    self.assertFalse(sm.contains([x,y,z]))
+    
   def test_intersect(self):
     x = self.x
     y = self.y
@@ -142,8 +151,15 @@ class TestSingularModule(unittest.TestCase):
     sm1 = SingularModule([[x,y+z,z**3-2*y],[x,y,z],[x,y,z**2]])
     self.assertEqual(sm1.ambient_free_module().gens,[[one,zero,zero],[zero,one,zero],[zero,zero,one]])
     
-  def test_is_free(self):
+  def test_is_free_trivial(self):
     free = SingularModule.create_free_module(3,self.poly_ring)
+    self.assertTrue(free.is_free())
+    
+  def test_is_free(self):
+    x = self.x
+    y = self.y
+    z = self.z
+    free = SingularModule([[x,0,0],[0,y,0],[0,0,x**2]])
     self.assertTrue(free.is_free())
     
   def test_is_free_not(self):
