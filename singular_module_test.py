@@ -81,10 +81,26 @@ class TestSingularModule(unittest.TestCase):
     x = self.x
     y = self.y
     z = self.z
-    one = self.poly_ring.one()
     sm = SingularModule([[x**2,x*y,x*z]])
     #Detect that this is not contianed even though a multiple is
     self.assertFalse(sm.contains([x,y,z]))
+    
+  def test_contains_module(self):
+    x = self.x
+    y = self.y
+    z = self.z
+    zero = self.poly_ring.zero()
+    smA = SingularModule([[x**2,x*y,y*z],[x,y,z]])
+    smB = SingularModule([[x**2+x,x*y+y,y*z+z],[zero,zero,y*z-x*z]])
+    self.assertTrue(smA.contains(smB))
+    
+  def test_contained_in_ambient(self):
+    x = self.x
+    y = self.y
+    z = self.z
+    smA = SingularModule([[x,y**3,z+x],[z,x,x**2]])
+    am = smA.ambient_free_module()
+    self.assertTrue(am.contains(smA))
     
   def test_intersect(self):
     x = self.x
@@ -181,9 +197,6 @@ class TestSingularModule(unittest.TestCase):
     mod = SingularModule.create_from_relation(relation,ideal)
     true_mod = SingularModule([[one,-x**2,x**4],[zero,y,-z**2-1],
                                 [zero,z**2,-x**2*z**2-x**2],[zero,zero,x**2*y-z**2]])
-    print
-    print "Mod: ",mod.gens
-    print "True mod: ",true_mod.gens
     self.assertTrue(mod.equals(true_mod))
     
   def test_create_relation_satisfy_A(self):

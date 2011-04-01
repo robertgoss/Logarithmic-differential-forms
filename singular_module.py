@@ -99,7 +99,14 @@ class SingularModule(SageObject):
   def create_module_str(self,module_name="MD"):
     return _sing_mod(self.gens,module_name);
 	
-  def contains(self,vector):
+  def contains(self,object):
+    if hasattr(object,"gens"):
+      module = object
+      for g in module.gens:
+        if not self.contains(g):
+          return False
+      return True
+    vector = object
     ring = ring = self.create_ring_str()
     module = self.create_module_str("modA")
     vector  = SingularModule([vector]).create_module_str("vec")
@@ -126,17 +133,8 @@ class SingularModule(SageObject):
     return mod_iter
     
   def equals(self,module):
-    equal = True
-    for gen in self.gens:
-      if not module.contains(gen):
-        equal = False
-        break
-    if equal:
-      for gen in module.gens:
-        if not self.contains(gen):
-          equal = False
-          break
-      if equal:
+    if self.contains(module):
+      if module.contains(self):
         return True
     return False
     
