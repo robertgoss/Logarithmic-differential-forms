@@ -11,7 +11,7 @@ from logarithmic_forms_test import TestSkewIter
 from logarithmic_forms_test import TestLogartihmicDifferentialForms
 
 cases = [ TestSingularModule , TestHomogeneousWieghts , TestConvertSymToPoly,
-          TestConvertPolyToSym , TestSkewIter TestLogartihmicDifferentialForms]
+          TestConvertPolyToSym , TestSkewIter, TestLogartihmicDifferentialForms]
 
 if __name__=="__main__":
   suites = []

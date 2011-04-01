@@ -98,15 +98,8 @@ class SingularModule(SageObject):
     
   def create_module_str(self,module_name="MD"):
     return _sing_mod(self.gens,module_name);
-	
-  def contains(self,object):
-    if hasattr(object,"gens"):
-      module = object
-      for g in module.gens:
-        if not self.contains(g):
-          return False
-      return True
-    vector = object
+    
+  def _contains_vector(self,vector):
     ring = ring = self.create_ring_str()
     module = self.create_module_str("modA")
     vector  = SingularModule([vector]).create_module_str("vec")
@@ -120,6 +113,17 @@ class SingularModule(SageObject):
     if last_line=="_[1]=0":
       return True
     return False
+    
+  def _contains_module(self,module):
+    for g in module.gens:
+      if not self.contains(g):
+        return False
+    return True
+	
+  def contains(self,object):
+    if hasattr(object,"gens"):
+      return self._contains_module(object)
+    return self._contains_vector(object)
   
   def intersection(self,module):
     ring = self.create_ring_str()
@@ -155,6 +159,12 @@ class SingularModule(SageObject):
       gen[i]=poly_ring.one()
       gens.append(gen)
     return SingularModule(gens);
+    
+  @classmethod
+  def create_zero_module(cls,n,poly_ring):
+    zero = poly_ring.zero()
+    zero_gen = [zero for _ in range(n)]
+    return SingularModule([zero_gen])
     
   @classmethod
   def create_from_relation(cls,relation,ideal):
