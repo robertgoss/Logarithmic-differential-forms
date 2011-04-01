@@ -159,7 +159,8 @@ class TestSingularModule(unittest.TestCase):
     x = self.x
     y = self.y
     z = self.z
-    free = SingularModule([[x,0,0],[0,y,0],[0,0,x**2]])
+    zero = self.poly_ring.zero()
+    free = SingularModule([[x,zero,zero],[zero,y,zero],[zero,zero,x**2]])
     self.assertTrue(free.is_free())
     
   def test_is_free_not(self):
@@ -178,16 +179,34 @@ class TestSingularModule(unittest.TestCase):
     relation = [x**2,one+z**2,y]
     ideal = Ideal(self.poly_ring,[x**2*y-z**2])
     mod = SingularModule.create_from_relation(relation,ideal)
-    true_mod = SingularModule([[one,-one,x**2],[zero,y,-(one+z**2)],
-                             [zero,z**2,x**2*(z**2+1)],[zero,zero,x**2*y-z**2]])
+    true_mod = SingularModule([[one,-x**2,x**4],[zero,y,-z**2-1],
+                                [zero,z**2,-x**2*z**2-x**2],[zero,zero,x**2*y-z**2]])
+    print
+    print "Mod: ",mod.gens
+    print "True mod: ",true_mod.gens
     self.assertTrue(mod.equals(true_mod))
     
-  def test_create_relation_satisfy(self):
+  def test_create_relation_satisfy_A(self):
     x = self.x
     y = self.y
     z = self.z
     zero = self.poly_ring.zero()
     relation = [x+x**4-y,(y+z)**3,-2*y+self.poly_ring.one()]
+    ideal = Ideal(self.poly_ring,[x**2*y-z**2])
+    mod = SingularModule.create_from_relation(relation,ideal)
+    for gen in mod.gens:
+      sum = zero
+      for g,rel in zip(gen,relation):
+        sum = sum +g*rel
+    self.assertTrue(sum in ideal)
+  
+  def test_create_relation_satisfy_B(self):
+    x = self.x
+    y = self.y
+    z = self.z
+    one = self.poly_ring.one()
+    zero = self.poly_ring.zero()
+    relation = [x**2,one+z**2,y]
     ideal = Ideal(self.poly_ring,[x**2*y-z**2])
     mod = SingularModule.create_from_relation(relation,ideal)
     for gen in mod.gens:

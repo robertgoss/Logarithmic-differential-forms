@@ -73,7 +73,7 @@ def _generators_from_relation(rel_coeffs,ideal):
   poss_gens = []
   if not rel_coeffs[0].is_zero():
     for g in poss_gens_0:
-      part_lift = (g*rel_coeffs[0]).lift(part_ideal)
+      part_lift = (-g*rel_coeffs[0]).lift(part_ideal)
       part_lift = part_lift[:(len(rel_coeffs)-1)] # Drop ideal stuff
       poss_gens.append([g]+part_lift)
   else:
@@ -100,26 +100,19 @@ class SingularModule(SageObject):
     return _sing_mod(self.gens,module_name);
 	
   def contains(self,vector):
-    #based on our code we need to deal with zero seperatly
-    is_zero = True
-    for coord in vector:
-      if not coord.is_zero():
-        is_zero = False
-    if is_zero:
-      return True;
-    ring = self.create_ring_str()
-    moduleA = self.create_module_str("modA")
-    vec_module = SingularModule([vector])
-    moduleB = vec_module.create_module_str("modB")
-    contain_code = "module cont = intersect(modA,modB);\n cont;\n"
-    all_code = ring+moduleA+moduleB+contain_code;
+    ring = ring = self.create_ring_str()
+    module = self.create_module_str("modA")
+    vector  = SingularModule([vector]).create_module_str("vec")
+    vector.replace("module","vector")#Bad hack
+    #See if reduction of vec is 0
+    contain_code = "reduce(vec,std(modA));\n"
+    all_code = ring+module+vector+contain_code;
     singular = Singular()
     output = singular.eval(all_code)
-    lines = output.split('\n')
-    last_line = lines[-1]
-    if last_line == "cont[1]=0":
-      return False
-    return True;
+    last_line = output.split('\n')[-1];
+    if last_line=="_[1]=0":
+      return True
+    return False
   
   def intersection(self,module):
     ring = self.create_ring_str()
