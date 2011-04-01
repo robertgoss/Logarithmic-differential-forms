@@ -149,7 +149,17 @@ class SingularModule(SageObject):
     return SingularModule.create_free_module(self.rank,self.poly_ring)
     
   def is_free(self):
-    return self.equals(SingularModule.create_free_module(self.rank,self.poly_ring))
+    if len(self.gens)==1:
+      return True
+    for i,g in enumerate(self.gens):
+      other_gens = self.gens[:i]+self.gens[i+1:]
+      g_mod = SingularModule([g])
+      other_mod = SingularModule(other_gens)
+      inter_mod = other_mod.intersection(g_mod)
+      zero = SingularModule.create_zero_module(1,self.poly_ring)
+      if not inter_mod.equals(zero):
+        return False
+    return True
     
   @classmethod
   def create_free_module(cls,n,poly_ring):
