@@ -162,8 +162,7 @@ class SingularModule(SageObject):
     return True
     
   def __repr__(self):
-    return "A submodule of the rank "+str(self.rank)+" free module over "+
-                      repr(self.poly_ring)+" with generators "+repr(self.gens)
+    return "A submodule of the rank "+str(self.rank)+" free module over "+repr(self.poly_ring)+" with generators "+repr(self.gens)
     
   @classmethod
   def create_free_module(cls,n,poly_ring):
