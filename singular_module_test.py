@@ -139,6 +139,24 @@ class TestSingularModule(unittest.TestCase):
     sm_2_1 = sm2.intersection(sm1)
     #Assert that equals is symetric
     self.assertTrue(sm_1_2.equals(sm_2_1))
+    
+  def test_reduce_lossless(self):
+    x = self.x
+    y = self.y
+    z = self.z
+    sm1 = SingularModule([[x,y+z,z**3-2*y],[x,y,z],[x,y,z**2]])
+    sm2 = SingularModule([[x,y+z,z**3-2*y],[x,y,z],[x,y,z**2]])
+    sm2.reduce_generators()
+    self.assertTrue(sm1.equals(sm2))
+    
+  def test_standard_basis_irredundent(self):
+    x = self.x
+    y = self.y
+    z = self.z
+    sm1 = SingularModule([[x,y+z,z**3-2*y],[x,y,z],[x,y,z**2]])
+    std_gens = sm1.standard_basis()
+    std_mod = SingularModule(std_gens)
+    self.assertTrue(sm1.equals(std_mod))
       
   def test_equals(self):
     x = self.x
@@ -183,7 +201,7 @@ class TestSingularModule(unittest.TestCase):
     x = self.x
     y = self.y
     z = self.z
-    sm1 = SingularModule([[x,y,z],[x*y,x*y,x*y],[2*x,x+y,z+y]])
+    sm1 = SingularModule([[x,x,x],[y,y,y]])
     self.assertFalse(sm1.is_free())
     
   def test_create_relation(self):

@@ -143,17 +143,31 @@ class SingularModule(SageObject):
     return False
     
   def reduce_generators(self):
-    raise NotImplementedException();
+    for g in self.gens:
+      other_gens = [ h for h in self.gens if not h==g ]
+      other_mod = SingularModule(other_gens)
+      if other_mod.contains(g):
+        self.gens.remove(g)
+        
+  def standard_basis(self):
+    ring = self.create_ring_str()
+    moduleA = self.create_module_str("modA")
+    std_code = "module std_mod=std(modA);\n matrix mat_std = std_mod;\n mat_std;\n"
+    all_code = ring+moduleA+std_code
+    singular = Singular()
+    output = singular.eval(all_code)
+    std_mod = SingularModule.create_from_singular_matrix(self.poly_ring,output,"mat_std");
+    return std_mod.gens
     
   def ambient_free_module(self):
     return SingularModule.create_free_module(self.rank,self.poly_ring)
     
   def is_free(self):
-    #Note this only tests if current generators are free!
     if len(self.gens)==1:
       return True
-    for i,g in enumerate(self.gens):
-      other_gens = self.gens[:i]+self.gens[i+1:]
+    std_gens = self.standard_basis()
+    for i,g in enumerate(std_gens):
+      other_gens = std_gens[:i]+std_gens[i+1:]
       g_mod = SingularModule([g])
       other_mod = SingularModule(other_gens)
       inter_mod = other_mod.intersection(g_mod)
