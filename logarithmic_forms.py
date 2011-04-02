@@ -151,6 +151,10 @@ class LogarithmicDifferentialForms(SageObject):
     if p==0:
       self._p_modules[0] = SingularModule([[self.divisor]])
       return
+    n = self.poly_ring.ngens()
+    if p==n:
+      self._p_modules[n] = SingularModule([[self.poly_ring.one()]])
+      return
     if p==1:
       self._compute_1_form_generators()
     else:
@@ -184,6 +188,13 @@ class LogarithmicDifferentialForms(SageObject):
       zero_form = DifferentialForm(self.form_space,0,1);
       self._p_gens[0] = [zero_form]
       return self._p_gens[0]
+    n = self.poly_ring.ngens()
+    if p==n:
+      top_form = DifferentialForm(self.form_space,n);
+      sym_div = convert_polynomial_to_symbolic(self.divisor,self.form_vars)
+      top_form[tuple(range(n))] = 1/sym_div
+      self._p_gens[n] = [top_form]
+      return self._p_gens[n]
     self._p_gens[p] = []
     for gen in self._p_modules[p].gens:
       p_form = DifferentialForm(self.form_space,p);
