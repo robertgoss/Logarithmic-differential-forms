@@ -149,6 +149,7 @@ class SingularModule(SageObject):
     return SingularModule.create_free_module(self.rank,self.poly_ring)
     
   def is_free(self):
+    #Note this only tests if current generators are free!
     if len(self.gens)==1:
       return True
     for i,g in enumerate(self.gens):

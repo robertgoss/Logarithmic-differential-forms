@@ -183,7 +183,7 @@ class TestSingularModule(unittest.TestCase):
     x = self.x
     y = self.y
     z = self.z
-    sm1 = SingularModule([[x,y,z]])
+    sm1 = SingularModule([[x,y,z],[x*y,x*y,x*y],[2*x,x+y,z+y]])
     self.assertFalse(sm1.is_free())
     
   def test_create_relation(self):
