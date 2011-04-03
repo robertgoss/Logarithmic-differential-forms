@@ -9,6 +9,7 @@ from logarithmic_forms import convert_symbolic_to_polynomial
 from logarithmic_forms import skew_iter
 from logarithmic_forms import LogarithmicDifferentialForms
 
+from singular_module import SingularModule
 
 from sage.rings.rational_field import QQ
 from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
@@ -130,6 +131,38 @@ class TestLogartihmicDifferentialForms(unittest.TestCase):
     self.assertEqual(len(logdf.p_form_generators(1)),3)
     self.assertEqual(len(logdf.p_form_generators(2)),3)
     self.assertEqual(len(logdf.p_form_generators(3)),1)
+    
+  def test_0_modules_crossing_ngens(self):
+    crossing = self.x*self.y*self.z
+    logdf = LogarithmicDifferentialForms(crossing)
+    crossing_0_module = SingularModule([[crossing]])
+    self.assertTrue(crossing_0_module.equals(logdf.p_module(0)))
+    
+  def test_1_modules_crossing_ngens(self):
+    x = self.x
+    y = self.y
+    z = self.z
+    zero = self.poly_ring.zero()
+    crossing = x*y*z
+    logdf = LogarithmicDifferentialForms(crossing)
+    crossing_1_module = SingularModule([[y*z,zero,zero],[zero,x*z,zero],[zero,zero,x*y]])
+    self.assertTrue(crossing_1_module.equals(logdf.p_module(1)))
+    
+  def test_2_modules_crossing_ngens(self):
+    x = self.x
+    y = self.y
+    z = self.z
+    zero = self.poly_ring.zero()
+    crossing = self.x*self.y*self.z
+    logdf = LogarithmicDifferentialForms(crossing)
+    crossing_2_module = SingularModule([[z,zero,zero],[zero,y,zero],[zero,zero,x]])
+    self.assertTrue(crossing_2_module.equals(logdf.p_module(2)))
+    
+  def test_3_modules_crossing_ngens(self):
+    crossing = self.x*self.y*self.z
+    logdf = LogarithmicDifferentialForms(crossing)
+    crossing_3_module = SingularModule([[self.poly_ring.one()]])
+    self.assertTrue(crossing_3_module.equals(logdf.p_module(3)))
 
     
     

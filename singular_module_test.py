@@ -158,13 +158,23 @@ class TestSingularModule(unittest.TestCase):
     std_mod = SingularModule(std_gens)
     self.assertTrue(sm1.equals(std_mod))
       
-  def test_equals(self):
+  def test_equals_A(self):
     x = self.x
     y = self.y
     z = self.z
     #Assert these are equal
     sm1 = SingularModule([[x,y+z,z**3-2*y],[x,y,z],[x,y,z**2]])
     sm2 = SingularModule([[x,y,z],[x,y+z,z**3-2*y],[x,y,z**2]])
+    self.assertTrue(sm1.equals(sm2))
+    
+  def test_equals_B(self):
+    x = self.x
+    y = self.y
+    z = self.z
+    zero = self.poly_ring.zero()
+    #Assert these are equal - from crossing divisor
+    sm1 = SingularModule([[x,zero,zero],[zero,y,zero],[zero,zero,z]])
+    sm2 = SingularModule([[zero,y,z],[zero,zero,z],[x,zero,zero]])
     self.assertTrue(sm1.equals(sm2))
     
   def test_equals_not(self):

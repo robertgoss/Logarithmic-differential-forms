@@ -103,9 +103,9 @@ def _log_1_form_rels(divisor):
       rel = []
       for k in range(n):
         if k==i:
-          rel.append(divisor.derivative(poly_ring.gens()[i]))
+          rel.append(divisor.derivative(poly_ring.gens()[j]))
         if k==j:
-          rel.append(-divisor.derivative(poly_ring.gens()[j]))
+          rel.append(-divisor.derivative(poly_ring.gens()[i]))
         if k!=i and k!=j:
           rel.append(poly_ring.zero())
       rels.append(rel)
@@ -176,7 +176,12 @@ class LogarithmicDifferentialForms(SageObject):
           poly = convert_symbolic_to_polynomial(p_form[tuple(v)],self.poly_ring)
           gen_p_form.append(poly)
         gens_p_forms.append(gen_p_form)
-      self._p_modules[p] = SingularModule(gens_p_forms)
+      #Normaize out - important
+      gens = []
+      for gen in gens_p_forms:
+        norm_gen = [g//(self.divisor**(p-1)) for g in gen]
+        gens.append(norm_gen)
+      self._p_modules[p] = SingularModule(gens)
     
   def p_form_generators(self,p):
     #the generators of the module of logarithmic differential p-forms
@@ -202,6 +207,11 @@ class LogarithmicDifferentialForms(SageObject):
         p_form[tuple(v)] = gen[i]/self.divisor
       self._p_gens[p].append(p_form)
     return self._p_gens[p]
+    
+  def p_module(self,p):
+    if not p in self._p_modules.keys():
+      self._compute_p_form_generators(p)
+    return self._p_modules[p]
     
 if __name__=="__main__":
   C = PolynomialRing(QQ,"x,y,z")
