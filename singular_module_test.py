@@ -1,4 +1,4 @@
-#!/home/robert/sage-4.7.alpha2/sage-python
+#!/usr/local/bin/sage
 
 import unittest
 

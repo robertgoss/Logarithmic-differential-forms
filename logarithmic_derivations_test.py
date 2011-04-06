@@ -1,3 +1,5 @@
+#!/usr/local/bin/sage
+
 import unittest
 
 class TestLogaritmicDerivations(unittest.TestCase):

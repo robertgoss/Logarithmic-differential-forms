@@ -1,4 +1,3 @@
-#!/home/robert/sage-4.7.alpha2/sage-python
 
 import sage.all
 
@@ -213,13 +212,3 @@ class LogarithmicDifferentialForms(SageObject):
       self._compute_p_form_generators(p)
     return self._p_modules[p]
     
-if __name__=="__main__":
-  C = PolynomialRing(QQ,"x,y,z")
-  x = C.gens()[0]
-  y = C.gens()[1]
-  z = C.gens()[2]
-  logdf = LogarithmicDifferentialForms(x*y*z)
-  print logdf.p_form_generators(0)
-  print logdf.p_form_generators(1)
-  print logdf.p_form_generators(2)
-  print logdf.p_form_generators(3)
