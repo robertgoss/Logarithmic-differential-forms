@@ -14,6 +14,8 @@ def _wieghted_degree(mon,var_wieghts):
   return sum
 
 def wieghted_max_degree(poly,var_wieghts):
+  if poly==poly.parent().zero():
+    return 0
   max_wieght = 0;
   for ex in poly.exponents():
     wieght = sum([e*w for e,w in zip(ex,var_wieghts)])
@@ -21,42 +23,33 @@ def wieghted_max_degree(poly,var_wieghts):
   return max_wieght
 
 def wieghted_min_degree(poly,var_wieghts):
+  if poly==poly.parent().zero():
+    return 0;
   min_wieght = poly.degree()*max(var_wieghts);
   for ex in poly.exponents():
     wieght = sum([e*w for e,w in zip(ex,var_wieghts)])
     min_wieght = min(min_wieght,wieght)
   return min_wieght
-  
-def _inter_monomials_upto_order(k,poly_ring,var_wieghts,depth):
-  if depth>=poly_ring.ngens():
-    yield poly_ring.one()
-  else:
-    for i in range(k/var_wieghts[depth]+1):
-      for mon in  _inter_monomials_upto_order(k,poly_ring,var_wieghts,depth+1):
-        new_mon = poly_ring.gens()[depth]**i * mon
-        if _wieghted_degree(new_mon,var_wieghts) <= k:
-          yield new_mon
-          
-def monomials_upto_order(k,poly_ring,var_wieghts):
-  #Catch wieghts giving infinite recursion?
-  mons = []
-  for mon in _inter_monomials_upto_order(k,poly_ring,var_wieghts,0):
-    mons.append(mon)
-  return mons
-  
-def monomials_between_orders(n,k,poly_ring,var_wieghts):
-  #Catch wieghts giving infinite recursion?
-  mons = []
-  for mon in _inter_monomials_upto_order(k,poly_ring,var_wieghts,0):
-    if _wieghted_degree(mon,var_wieghts) >= n:
-      mons.append(mon)
-  return mons
 
+def monomials_of_order(k,poly_ring,var_wieghts,start=0):
+  if k==0:
+    yield poly_ring.one()
+    return
+  if start < len(var_wieghts)-1:
+    for i in range(k/var_wieghts[start]+1):
+      for mon in monomials_of_order(k-(i*var_wieghts[start]),poly_ring,var_wieghts,start+1):
+        new_mon = poly_ring.gens()[start]**i * mon
+        if wieghted_max_degree(new_mon,var_wieghts)==k:
+          yield new_mon
+  else:
+    new_mon  = poly_ring.gens()[start]**(k/var_wieghts[start])
+    if wieghted_max_degree(new_mon,var_wieghts)==k:
+      yield new_mon
 
 class GradedModule(SingularModule):
 
   def __init__(self,gens,column_wieghts,var_wieghts):
-    SingularModule.__init__(gens)
+    SingularModule.__init__(self,gens)
     self.column_wieghts = column_wieghts
     self.var_wieghts = var_wieghts
     
@@ -72,5 +65,17 @@ class GradedModule(SingularModule):
     for p,w in zip(vector,self.column_wieghts):
       min_deg = max(max_deg,w+wieghted_max_degree(p,self.var_wieghts))
     return max_deg
+
+  def monomial_basis(self,k):
+    basis = []
+    zero = [self.poly_ring.zero() for _ in range(self.rank)]
+    for i in range(self.rank):
+      for mon in monomials_of_order(k-self.column_wieghts[i],self.poly_ring,self.var_wieghts):
+        mon_vec = list(zero)
+        mon_vec[i] = mon
+        basis.append(tuple(mon_vec))
+    return basis
+
     
   def homogeneous_part_basis(self,k):
+    pass;
