@@ -164,6 +164,11 @@ class TestLogartihmicDifferentialForms(unittest.TestCase):
     crossing_3_module = SingularModule([[self.poly_ring.one()]])
     self.assertTrue(crossing_3_module.equals(logdf.p_module(3)))
 
+  def test_zero_part_crossing_forms(self):
+    crossing = self.x*self.y*self.z
+    logdf = LogarithmicDifferentialForms(crossing)
+    for i in range(4):
+      self.assertEqual(len(logdf.p_forms_zero_basis(i)),len(logdf.p_form_generators(i)))
     
     
 if __name__=="__main__":

@@ -20,6 +20,7 @@ from sage.symbolic.ring import var
 #TODO - log forms class
 
 from singular_module import SingularModule
+from graded_module import GradedModule
 
 class NotImplementedException(Exception):
   pass
@@ -140,7 +141,8 @@ class LogarithmicDifferentialForms(SageObject):
     #compute the generators of the logarithmic p-forms
     self._p_modules = {} # modules of logarithmic differential p-forms
     self._p_gens = {} # the generators of the module of logarithmic differential p-forms
-    
+    self._p_zero_part_basis = {}
+
   def _compute_1_form_generators(self):
     rels = _log_1_form_rels(self.divisor)
     ideals = [[self.divisor]*self.poly_ring for _ in range(len(rels))]
@@ -211,4 +213,37 @@ class LogarithmicDifferentialForms(SageObject):
     if not p in self._p_modules.keys():
       self._compute_p_form_generators(p)
     return self._p_modules[p]
+
+  def _compute_zero_part_basis(self,p):
+    p_mod = self.p_module(p)
+    if p==0:
+      self._p_zero_part_basis[0] = self.p_module(0).gens
+      return
+    column_wieghts = []
+    for v in skew_iter(self.poly_ring.ngens(),p):
+      wsum = 0
+      for i in v:
+        wsum = wsum + self.wieghts[i]
+      column_wieghts.append(wsum)
+    if p==self.poly_ring.ngens():
+      column_wieghts = [sum(self.wieghts)]
+    g_mod = GradedModule(p_mod.gens,column_wieghts,self.wieghts)
+    basis = g_mod.homogeneous_part_basis(self.degree)
+    self._p_zero_part_basis[p] = basis
     
+  def p_forms_zero_basis(self,p):
+    if not p in self._p_zero_part_basis.keys():
+      self._compute_zero_part_basis(p)
+    basis = self._p_zero_part_basis[p]
+    basis_forms = []
+    for vec in basis:
+      p_form = DifferentialForm(self.form_space,p);
+      for i,v in enumerate(skew_iter(self.poly_ring.ngens(),p)):
+        p_form[tuple(v)] = vec[i]/self.divisor
+      basis_forms.append(p_form)
+    return basis_forms
+
+  def p_module_zero_basis(self,p):
+    if not p in self._p_zero_part_basis.keys():
+      self._compute_zero_part_basis(p)
+    return self._p_zero_part_basis[p]

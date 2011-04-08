@@ -157,6 +157,17 @@ class TestGradedModule(unittest.TestCase):
     gm = GradedModule([[z,one,x**2 + y]],[0,1,2],[1,2,3])
     basis = gm.homogeneous_part_basis(6);
     self.assertEqual(len(basis),10)
+ 
+  def test_homogeneous_part_basisB(self):
+    #From bug found with ncd
+    x = self.x
+    y = self.y
+    z = self.z
+    one = self.poly_ring.one()
+    zero = self.poly_ring.zero()
+    gm = GradedModule([[zero, x*z, x*y], [zero, -x*z, zero], [y*z, zero, zero]],[1, 1, 1],[1, 1, 1])
+    basis = gm.homogeneous_part_basis(3);
+    self.assertEqual(len(basis),3)
 
 if __name__=="__main__":
   unittest.main()

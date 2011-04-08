@@ -7,6 +7,8 @@ from sage.rings.rational_field import QQ
 
 from singular_module import SingularModule
 
+from math import floor
+
 def _wieghted_degree(mon,var_wieghts):
   sum = 0
   for w,ex in zip(var_wieghts,mon.exponents()[0]):
@@ -36,7 +38,7 @@ def monomials_of_order(k,poly_ring,var_wieghts,start=0):
     yield poly_ring.one()
     return
   if start < len(var_wieghts)-1:
-    for i in range(k/var_wieghts[start]+1):
+    for i in range(floor(k/var_wieghts[start])+1):
       for mon in monomials_of_order(k-(i*var_wieghts[start]),poly_ring,var_wieghts,start+1):
         new_mon = poly_ring.gens()[start]**i * mon
         if wieghted_max_degree(new_mon,var_wieghts)==k:
