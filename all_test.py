@@ -12,9 +12,15 @@ from logarithmic_forms_test import TestLogartihmicDifferentialForms
 
 from logarithmic_derivations_test import TestLogaritmicDerivations
 
+from graded_module_test import TestWeightedMaxDegree
+from graded_module_test import TestWeightedMinDegree
+from graded_module_test import TestGradedModule
+from graded_module_test import TestMonomialsOfOrder
+
 cases = [ TestSingularModule , TestHomogeneousWieghts , TestConvertSymToPoly,
           TestConvertPolyToSym , TestSkewIter, TestLogartihmicDifferentialForms,
-          TestLogaritmicDerivations]
+          TestLogaritmicDerivations, TestWeightedMinDegree, TestWeightedMaxDegree,
+          TestMonomialsOfOrder, TestGradedModule]
 
 if __name__=="__main__":
   suites = []

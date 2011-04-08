@@ -90,4 +90,40 @@ class GradedModule(SingularModule):
     return parts
     
   def homogeneous_part_basis(self,k):
-    pass
+    mon_basis = {}
+    for i,mon in enumerate(self.monomial_basis(k)):
+      mon_basis[mon] = i
+    rows = []
+    for g in self.gens:
+      parts = self.get_homogeneous_parts(g)
+      for deg,part in parts.iteritems():
+        if deg<=k:
+          for mon in monomials_of_order(k-deg,self.poly_ring,self.var_wieghts):
+            rows.append([mon*p for p in part])
+    mat_dict = {}
+    for i,row in enumerate(rows):
+      for j,poly in enumerate(row):
+        for c,mon in poly:
+          mon_vector = [ self.poly_ring.zero() for _ in range(self.rank) ]
+          mon_vector[j] = mon
+          mon_index = mon_basis[tuple(mon_vector)]
+          try:
+            mat_dict[(i,mon_index)] = mat_dict[(i,mon_index)] + c
+          except:
+            mat_dict[(i,mon_index)] = c
+    base_matrix = matrix(QQ,mat_dict)
+    basis = base_matrix.image().basis()
+    #Reverse mon basis
+    r_mon_basis = {}
+    for i,mon in enumerate(self.monomial_basis(k)):
+      r_mon_basis[i] = mon
+    rows = []
+    for row in basis:
+      row_sum = [self.poly_ring.zero() for _ in range(self.rank)]
+      for i,c in enumerate(row):
+        mon_vec = r_mon_basis[i]
+        for j in range(self.rank):
+          row_sum[j] = row_sum[j] + (mon_vec[j]*c)
+      rows.append(row_sum)
+    return rows
+    

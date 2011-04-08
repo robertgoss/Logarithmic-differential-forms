@@ -148,5 +148,15 @@ class TestGradedModule(unittest.TestCase):
     parts = gm.get_homogeneous_parts([x*y,x**3+z*y])
     self.assertEqual(parts,{3:[x*y,zero],4:[zero,x**3],6:[zero,z*y]})
   
+  def test_homogeneous_part_basisA(self):
+    x = self.x
+    y = self.y
+    z = self.z
+    one = self.poly_ring.one()
+    zero = self.poly_ring.zero()
+    gm = GradedModule([[z,one,x**2 + y]],[0,1,2],[1,2,3])
+    basis = gm.homogeneous_part_basis(6);
+    self.assertEqual(len(basis),10)
+
 if __name__=="__main__":
   unittest.main()
