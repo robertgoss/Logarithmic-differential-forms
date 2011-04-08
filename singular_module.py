@@ -87,6 +87,7 @@ def _generators_from_relation(rel_coeffs,ideal):
   return poss_gens
 
 class SingularModule(SageObject):
+  #TODO refactor to spawn only 1 singular process (per module?)
 
   def __init__(self,gens):
     self.gens = gens
