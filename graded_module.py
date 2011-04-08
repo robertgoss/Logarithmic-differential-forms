@@ -76,6 +76,18 @@ class GradedModule(SingularModule):
         basis.append(tuple(mon_vec))
     return basis
 
+  def get_homogeneous_parts(self,vector):
+    parts = {}
+    for i,shift in enumerate(self.column_wieghts):
+      poly = vector[i]
+      for c,mon in poly:
+        deg = _wieghted_degree(mon,self.var_wieghts)+shift
+        try:
+          parts[deg][i] = parts[deg][i] + c*mon
+        except:
+          parts[deg] = [self.poly_ring.zero() for _ in range(self.rank)]
+          parts[deg][i] = c*mon
+    return parts
     
   def homogeneous_part_basis(self,k):
-    pass;
+    pass

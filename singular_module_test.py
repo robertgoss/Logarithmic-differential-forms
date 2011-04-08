@@ -7,7 +7,6 @@ from singular_module import SingularModule
 from sage.rings.rational_field import QQ
 from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
 from sage.symbolic.ring import var
-
 from sage.rings.ideal import Ideal
 
 class TestSingularModule(unittest.TestCase):
