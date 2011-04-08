@@ -173,40 +173,37 @@ class LogarithmicDifferentialForms(SageObject):
       gens_p_forms = []
       for p_form in diff_p_forms:
         gen_p_form = []
-        for v in skew_iter(self.poly_ring.ngens(),p):
-          poly = convert_symbolic_to_polynomial(p_form[tuple(v)],self.poly_ring)
-          gen_p_form.append(poly)
-        gens_p_forms.append(gen_p_form)
+        p_vec = self._convert_p_form_to_p_vec(p,p_form)
+        gens_p_forms.append(p_vec)
       #Normaize out - important
       gens = []
       for gen in gens_p_forms:
         norm_gen = [g//(self.divisor**(p-1)) for g in gen]
         gens.append(norm_gen)
       self._p_modules[p] = SingularModule(gens)
+
+  def _convert_p_vec_to_p_form(self,p,vec):
+    p_form = DifferentialForm(self.form_space,p);
+    for i,v in enumerate(skew_iter(self.poly_ring.ngens(),p)):
+      p_form[tuple(v)] = vec[i]/self.divisor
+    return p_form
     
+  def _convert_p_form_to_p_vec(self,p,p_form):
+    p_vec = []
+    for i,v in enumerate(skew_iter(self.poly_ring.ngens(),p)):
+      poly = convert_symbolic_to_polynomial(p_form[tuple(v)],self.poly_ring)
+      p_vec.append(poly)
+    return p_vec
+
   def p_form_generators(self,p):
     #the generators of the module of logarithmic differential p-forms
     if p in self._p_gens.keys():
       return self._p_gens[p]
     if not p in self._p_modules.keys():
       self._compute_p_form_generators(p)
-    if p==0:
-      zero_form = DifferentialForm(self.form_space,0,1);
-      self._p_gens[0] = [zero_form]
-      return self._p_gens[0]
-    n = self.poly_ring.ngens()
-    if p==n:
-      top_form = DifferentialForm(self.form_space,n);
-      sym_div = convert_polynomial_to_symbolic(self.divisor,self.form_vars)
-      top_form[tuple(range(n))] = 1/sym_div
-      self._p_gens[n] = [top_form]
-      return self._p_gens[n]
     self._p_gens[p] = []
     for gen in self._p_modules[p].gens:
-      p_form = DifferentialForm(self.form_space,p);
-      for i,v in enumerate(skew_iter(self.poly_ring.ngens(),p)):
-        p_form[tuple(v)] = gen[i]/self.divisor
-      self._p_gens[p].append(p_form)
+      self._p_gens[p].append(self._convert_p_vec_to_p_form(p,gen))
     return self._p_gens[p]
     
   def p_module(self,p):
@@ -237,10 +234,7 @@ class LogarithmicDifferentialForms(SageObject):
     basis = self._p_zero_part_basis[p]
     basis_forms = []
     for vec in basis:
-      p_form = DifferentialForm(self.form_space,p);
-      for i,v in enumerate(skew_iter(self.poly_ring.ngens(),p)):
-        p_form[tuple(v)] = vec[i]/self.divisor
-      basis_forms.append(p_form)
+      basis_forms.append(self._convert_p_vec_to_p_form(p,vec))
     return basis_forms
 
   def p_module_zero_basis(self,p):
