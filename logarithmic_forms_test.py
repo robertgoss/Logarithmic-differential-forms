@@ -156,6 +156,9 @@ class TestLogartihmicDifferentialForms(unittest.TestCase):
     crossing = self.x*self.y*self.z
     logdf = LogarithmicDifferentialForms(crossing)
     crossing_2_module = SingularModule([[z,zero,zero],[zero,y,zero],[zero,zero,x]])
+    print
+    print  "Mod",logdf.p_module(2)
+    print
     self.assertTrue(crossing_2_module.equals(logdf.p_module(2)))
     
   def test_3_modules_crossing_ngens(self):
