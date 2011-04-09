@@ -71,6 +71,7 @@ class LogarithmicDifferentialForm(SageObject):
     
   def __init__(self,degree,vec,differential_forms):
     self.vec = vec
+    self.degree = degree
     self.diff_forms = differential_forms
     self.divisor = self.diff_forms.divisor
     sym_divisor = convert_polynomial_to_symbolic(self.divisor,self.diff_forms.form_vars)
@@ -87,6 +88,10 @@ class LogarithmicDifferentialForm(SageObject):
     diff_form = DifferentialForm.wedge(self.form,other.form)
     return LogarithmicDifferentialForm.create_from_form(diff_form,self.diff_forms)
 
+  def derivative(self):
+    diff_form = self.form.derivative()
+    return LogarithmicDifferentialForm.create_from_form(diff_form,self.diff_forms)
+
   def __add__(self,other):
     diff_form = self.form+other.form
     return LogarithmicDifferentialForm.create_from_form(diff_form,self.diff_forms)
@@ -98,13 +103,13 @@ class LogarithmicDifferentialForm(SageObject):
   def __mul__(self,scalar):
     vec = []
     for v in self.vec:
-      vec.append(v*scalar)
+      vec.append(v*Rational(scalar))
     return LogarithmicDifferentialForm(self.form.degree(),vec,self.diff_forms)
 
   def __rmul__(self,scalar):
     vec = []
     for v in self.vec:
-      vec.append(v*scalar)
+      vec.append(v*Rational(scalar))
     return LogarithmicDifferentialForm(self.form.degree(),vec,self.diff_forms)
 
   @classmethod
@@ -120,5 +125,10 @@ class LogarithmicDifferentialForm(SageObject):
   def make_unit(cls,diff_forms):
     unit = LogarithmicDifferentialForm(0,[diff_forms.divisor],diff_forms)
     return unit
+
+  @classmethod
+  def make_zero(cls,p,diff_forms):
+    zero_form = DifferentialForm(diff_forms.form_space,p)
+    return LogarithmicDifferentialForm.create_from_form(zero_form,diff_forms)
 
     

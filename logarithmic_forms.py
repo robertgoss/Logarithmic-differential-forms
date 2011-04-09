@@ -103,18 +103,6 @@ def skew_iter(n,depth=1,start=0):
     for i in range(start,n):
       for v in skew_iter(n,depth-1,start+i+1):
         yield [i]+v
-
-def _scale_form(form,scalar,n):
-  #Diff forms dont scale correctly cooercion needs improvement! TODO
-  for v in skew_iter(n,form.degree()):
-    form[tuple(v)] = form[tuple(v)] * scalar
-  return form
-
-def _form_from_vec(vec,basis,poly_ring):
-  form = 0
-  for v,b in zip(vec,basis):
-    form = form + _scale_form(b,v,poly_ring.ngens())
-  return form
       
 class LogarithmicDifferentialForms(SageObject):
   def __init__(self,divisor,var_name="z"):
@@ -217,7 +205,7 @@ class LogarithmicDifferentialForms(SageObject):
     basis = self._p_zero_part_basis[p]
     basis_forms = []
     for vec in basis:
-      basis_forms.append(self._convert_p_vec_to_p_form(p,vec))
+      basis_forms.append(LogarithmicDifferentialForm(p,vec,self))
     return basis_forms
 
   def p_module_zero_basis(self,p):
@@ -242,11 +230,10 @@ class LogarithmicDifferentialForms(SageObject):
     return GradedModule(p_mod.gens,column_wieghts,self.wieghts)
 
   def _form_in_terms_of_basis(self,p,form,basis,gm):
-    sym_div = convert_polynomial_to_symbolic(self.divisor,self.form_vars)
-    poly_form = self._convert_p_form_to_p_vec(p,form*sym_div)
+    poly_form = form.vec
     poly_basis = []
     for b in basis:
-      poly_basis.append(self._convert_p_form_to_p_vec(p,form*sym_div))
+      poly_basis.append(form.vec)
     lift_basis = []
     for pb in poly_basis:
       lift_basis.append(gm.lift(pb))
@@ -287,7 +274,11 @@ class LogarithmicDifferentialForms(SageObject):
     hom = ker.quotient(img)
     hom_forms = []
     for b in hom.basis():
-      hom_forms.append(_form_from_vec(hom.lift(b),p_forms_1,self.poly_ring))
+      lift = hom.lift(b)
+      form = LogarithmicDifferentialForm.make_zero(p,self)
+      for l,f in zip(lift,p_forms_1):
+        form = form + (l*f)
+      hom_forms.append(form)
     return hom_forms;
 
   def complement_homology(self):

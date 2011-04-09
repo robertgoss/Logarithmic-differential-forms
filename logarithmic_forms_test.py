@@ -51,50 +51,6 @@ class TestHomogeneousWieghts(unittest.TestCase):
     divisor = x**2*y-x**3 + z +y**2;
     self.assertRaises(NotWieghtHomogeneousException,homogenous_wieghts,divisor)
     
-class TestConvertSymToPoly(unittest.TestCase):
-
-  def setUp(self):
-    self.poly_ring = PolynomialRing(QQ,"x",3);
-    self.x = self.poly_ring.gens()[0];
-    self.y = self.poly_ring.gens()[1];
-    self.z = self.poly_ring.gens()[2];
-    self.vars = var('x,y,z')
-    
-  def test_zero(self):
-    zero = 0*self.vars[0]
-    poly = convert_symbolic_to_polynomial(zero,self.poly_ring)
-    self.assertEqual(poly,self.poly_ring.zero())
-    
-  def test_convert(self):
-    x = self.x
-    y = self.y
-    z = self.z
-    sym_poly = 4*self.vars[0]**4 + self.vars[1]*self.vars[0]**12*self.vars[1]-self.vars[2]
-    poly = convert_symbolic_to_polynomial(sym_poly,self.poly_ring)
-    self.assertEqual(poly,4*x**4+y*x**12*y-z)
-    
-class TestConvertPolyToSym(unittest.TestCase):
-
-  def setUp(self):
-    self.poly_ring = PolynomialRing(QQ,"x",3);
-    self.x = self.poly_ring.gens()[0];
-    self.y = self.poly_ring.gens()[1];
-    self.z = self.poly_ring.gens()[2];
-    self.vars = var('x,y,z')
-    
-  def test_zero(self):
-    zero = self.poly_ring.zero()
-    poly = convert_polynomial_to_symbolic(zero,self.vars)
-    self.assertEqual(poly,0)
-    
-  def test_convert(self):
-    x = self.x
-    y = self.y
-    z = self.z
-    poly = 4*x**4+y*x**12*y-z
-    sym_poly = 4*self.vars[0]**4 + self.vars[1]*self.vars[0]**12*self.vars[1]-self.vars[2]
-    con_poly = convert_polynomial_to_symbolic(poly,self.vars)
-    self.assertEqual(sym_poly,con_poly)
     
 class TestSkewIter(unittest.TestCase):
 
@@ -156,9 +112,6 @@ class TestLogartihmicDifferentialForms(unittest.TestCase):
     crossing = self.x*self.y*self.z
     logdf = LogarithmicDifferentialForms(crossing)
     crossing_2_module = SingularModule([[z,zero,zero],[zero,y,zero],[zero,zero,x]])
-    print
-    print  "Mod",logdf.p_module(2)
-    print
     self.assertTrue(crossing_2_module.equals(logdf.p_module(2)))
     
   def test_3_modules_crossing_ngens(self):
