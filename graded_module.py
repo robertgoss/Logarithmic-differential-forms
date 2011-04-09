@@ -38,7 +38,7 @@ def monomials_of_order(k,poly_ring,var_wieghts,start=0):
     yield poly_ring.one()
     return
   if start < len(var_wieghts)-1:
-    for i in range(floor(k/var_wieghts[start])+1):
+    for i in range(int(floor(k/var_wieghts[start])+1)):
       for mon in monomials_of_order(k-(i*var_wieghts[start]),poly_ring,var_wieghts,start+1):
         new_mon = poly_ring.gens()[start]**i * mon
         if wieghted_max_degree(new_mon,var_wieghts)==k:
@@ -77,6 +77,22 @@ class GradedModule(SingularModule):
         mon_vec[i] = mon
         basis.append(tuple(mon_vec))
     return basis
+
+  def lift(self,vector):
+    degree = self._max_degree(vector)
+    m_basis = self.monomial_basis(degree)
+    mon_vector = {}
+    mon_index = []
+    for mon in m_basis:
+      mon_vector[tuple(mon)] = mon[0].parent().zero()
+      mon_index.append(tuple(mon))
+    for i,poly in enumerate(vector):
+      for c,mon in poly:
+        mon_vector[tuple(mon)] = c
+    m_v = []
+    for mon in mon_index:
+      m_v.append(mon_vector[mon])
+    return m_v
 
   def get_homogeneous_parts(self,vector):
     parts = {}
