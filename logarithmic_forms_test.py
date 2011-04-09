@@ -170,6 +170,14 @@ class TestLogartihmicDifferentialForms(unittest.TestCase):
     for i in range(4):
       self.assertEqual(len(logdf.p_forms_zero_basis(i)),len(logdf.p_form_generators(i)))
     
-    
+  def test_complement_homology(self):
+    crossing = self.x*self.y*self.z
+    logdf = LogarithmicDifferentialForms(crossing)
+    hom = logdf.complement_homology()
+    betti = {}
+    for i,h in hom.iteritems():
+      betti[i] = len(h)
+    self.assertEqual(betti,{0:1,1:3,2:3,3:1})
+
 if __name__=="__main__":
   unittest.main()

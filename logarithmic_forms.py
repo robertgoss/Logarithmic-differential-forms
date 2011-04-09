@@ -16,7 +16,9 @@ from sage.tensor.differential_form_element import DifferentialForm
 from sage.rings.rational_field import QQ
 from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
 from sage.symbolic.ring import var
-
+from sage.modules.free_module_element import vector
+from sage.modules.free_module import VectorSpace
+from sage.matrix.constructor import matrix
 #TODO - log forms class
 
 from singular_module import SingularModule
@@ -125,6 +127,18 @@ def skew_iter(n,depth=1,start=0):
     for i in range(start,n):
       for v in skew_iter(n,depth-1,start+i+1):
         yield [i]+v
+
+def _scale_form(form,scalar,n):
+  #Diff forms dont scale correctly cooercion needs improvement! TODO
+  for v in skew_iter(n,form.degree()):
+    form[tuple(v)] = form[tuple(v)] * scalar
+  return form
+
+def _form_from_vec(vec,basis,poly_ring):
+  form = 0
+  for v,b in zip(vec,basis):
+    form = form + _scale_form(b,v,poly_ring.ngens())
+  return form
       
 class LogarithmicDifferentialForms(SageObject):
   def __init__(self,divisor,var_name="z"):
@@ -184,8 +198,10 @@ class LogarithmicDifferentialForms(SageObject):
 
   def _convert_p_vec_to_p_form(self,p,vec):
     p_form = DifferentialForm(self.form_space,p);
+    div_sym = convert_polynomial_to_symbolic(self.divisor,self.form_vars)
     for i,v in enumerate(skew_iter(self.poly_ring.ngens(),p)):
-      p_form[tuple(v)] = vec[i]/self.divisor
+      vec_sym = convert_polynomial_to_symbolic(vec[i],self.form_vars)
+      p_form[tuple(v)] = vec_sym/div_sym
     return p_form
     
   def _convert_p_form_to_p_vec(self,p,p_form):
@@ -196,6 +212,8 @@ class LogarithmicDifferentialForms(SageObject):
     return p_vec
 
   def p_form_generators(self,p):
+    if p > self.poly_ring.ngens():
+      return []
     #the generators of the module of logarithmic differential p-forms
     if p in self._p_gens.keys():
       return self._p_gens[p]
@@ -207,28 +225,23 @@ class LogarithmicDifferentialForms(SageObject):
     return self._p_gens[p]
     
   def p_module(self,p):
+    if p > self.poly_ring.ngens():
+      return None
     if not p in self._p_modules.keys():
       self._compute_p_form_generators(p)
     return self._p_modules[p]
 
   def _compute_zero_part_basis(self,p):
-    p_mod = self.p_module(p)
     if p==0:
       self._p_zero_part_basis[0] = self.p_module(0).gens
       return
-    column_wieghts = []
-    for v in skew_iter(self.poly_ring.ngens(),p):
-      wsum = 0
-      for i in v:
-        wsum = wsum + self.wieghts[i]
-      column_wieghts.append(wsum)
-    if p==self.poly_ring.ngens():
-      column_wieghts = [sum(self.wieghts)]
-    g_mod = GradedModule(p_mod.gens,column_wieghts,self.wieghts)
+    g_mod = self._p_graded_module(p)
     basis = g_mod.homogeneous_part_basis(self.degree)
     self._p_zero_part_basis[p] = basis
     
   def p_forms_zero_basis(self,p):
+    if p > self.poly_ring.ngens():
+      return []
     if not p in self._p_zero_part_basis.keys():
       self._compute_zero_part_basis(p)
     basis = self._p_zero_part_basis[p]
@@ -238,6 +251,74 @@ class LogarithmicDifferentialForms(SageObject):
     return basis_forms
 
   def p_module_zero_basis(self,p):
+    if p > self.poly_ring.ngens():
+      return []
     if not p in self._p_zero_part_basis.keys():
       self._compute_zero_part_basis(p)
     return self._p_zero_part_basis[p]
+
+  def _p_graded_module(self,p):
+    if p > self.poly_ring.ngens():
+      return None
+    p_mod = self.p_module(p)
+    column_wieghts = []
+    for v in skew_iter(self.poly_ring.ngens(),p):
+      wsum = 0
+      for i in v:
+        wsum = wsum + self.wieghts[i]
+      column_wieghts.append(wsum)
+    if p==self.poly_ring.ngens():
+      column_wieghts = [sum(self.wieghts)]
+    return GradedModule(p_mod.gens,column_wieghts,self.wieghts)
+
+  def _form_in_terms_of_basis(self,p,form,basis,gm):
+    sym_div = convert_polynomial_to_symbolic(self.divisor,self.form_vars)
+    poly_form = self._convert_p_form_to_p_vec(p,form*sym_div)
+    poly_basis = []
+    for b in basis:
+      poly_basis.append(self._convert_p_form_to_p_vec(p,form*sym_div))
+    lift_basis = []
+    for pb in poly_basis:
+      lift_basis.append(gm.lift(pb))
+    lift_form = gm.lift(poly_form)
+    mat = matrix(QQ,lift_basis)
+    lift = mat.solve_left(vector(lift_form))
+    return lift
+
+  def _p_complement_homology(self,p):
+    p_forms_0 = self.p_forms_zero_basis(p-1)
+    p_forms_1 = self.p_forms_zero_basis(p)
+    p_forms_2 = self.p_forms_zero_basis(p+1)
+    g_mod_1 = self._p_graded_module(p)
+    g_mod_2 = self._p_graded_module(p+1)
+    d_p_rows = []
+    for form in p_forms_0:
+      d_form = form.derivative()
+      d_p_rows.append(self._form_in_terms_of_basis(p,d_form,p_forms_1,g_mod_1))
+    mat_p = matrix(QQ,d_p_rows).transpose()
+    img = mat_p.image()
+    if not p==self.poly_ring.ngens():
+      d_p_1_rows = []
+      for form in p_forms_1:
+        d_form = form.derivative()
+        d_p_1_rows.append(self._form_in_terms_of_basis(p+1,d_form,p_forms_2,g_mod_2))
+      mat_p_1 = matrix(QQ,d_p_1_rows).transpose()
+      ker = mat_p_1.right_kernel()
+      hom = ker.quotient(img)
+    else:
+      #Deal with case were we are mapping to n+1 space
+      if not img.rank()==0:
+        return []
+      else:
+        return p_forms_1
+    hom_forms = []
+    for b in hom.basis():
+      hom_forms.append(_form_from_vec(hom.lift(b),p_forms_1,self.poly_ring))
+    return hom_forms;
+
+  def complement_homology(self):
+    homology = {}
+    homology[0] = [1]
+    for i in range(1,self.poly_ring.ngens()+1):
+      homology[i] = self._p_complement_homology(i)
+    return homology
