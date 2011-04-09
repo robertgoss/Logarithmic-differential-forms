@@ -289,28 +289,32 @@ class LogarithmicDifferentialForms(SageObject):
     p_forms_0 = self.p_forms_zero_basis(p-1)
     p_forms_1 = self.p_forms_zero_basis(p)
     p_forms_2 = self.p_forms_zero_basis(p+1)
-    g_mod_1 = self._p_graded_module(p)
-    g_mod_2 = self._p_graded_module(p+1)
-    d_p_rows = []
-    for form in p_forms_0:
-      d_form = form.derivative()
-      d_p_rows.append(self._form_in_terms_of_basis(p,d_form,p_forms_1,g_mod_1))
-    mat_p = matrix(QQ,d_p_rows).transpose()
-    img = mat_p.image()
-    if not p==self.poly_ring.ngens():
+    if len(p_forms_1)==0:
+      #In this case img and ker must  be trivial
+      return []
+    if len(p_forms_0)==0:
+      p_space = VectorSpace(QQ,len(p_forms_1)) 
+      img = p_space.subspace([p_space.zero()])
+    else:
+      g_mod_1 = self._p_graded_module(p)
+      d_p_rows = []
+      for form in p_forms_0:
+        d_form = form.derivative()
+        d_p_rows.append(self._form_in_terms_of_basis(p,d_form,p_forms_1,g_mod_1))
+      mat_p = matrix(QQ,d_p_rows)
+      img = mat_p.image() # Sage computes the image by left multiplication!
+    if len(p_forms_2)==0:
+      p_space = VectorSpace(QQ,len(p_forms_1))
+      ker = p_space
+    else:
+      g_mod_2 = self._p_graded_module(p+1)
       d_p_1_rows = []
       for form in p_forms_1:
         d_form = form.derivative()
         d_p_1_rows.append(self._form_in_terms_of_basis(p+1,d_form,p_forms_2,g_mod_2))
       mat_p_1 = matrix(QQ,d_p_1_rows).transpose()
       ker = mat_p_1.right_kernel()
-      hom = ker.quotient(img)
-    else:
-      #Deal with case were we are mapping to n+1 space
-      if not img.rank()==0:
-        return []
-      else:
-        return p_forms_1
+    hom = ker.quotient(img)
     hom_forms = []
     for b in hom.basis():
       hom_forms.append(_form_from_vec(hom.lift(b),p_forms_1,self.poly_ring))

@@ -39,12 +39,12 @@ def monomials_of_order(k,poly_ring,var_wieghts,start=0):
     return
   if start < len(var_wieghts)-1:
     for i in range(int(floor(k/var_wieghts[start])+1)):
-      for mon in monomials_of_order(k-(i*var_wieghts[start]),poly_ring,var_wieghts,start+1):
+      for mon in monomials_of_order(k-int(floor(i*var_wieghts[start])),poly_ring,var_wieghts,start+1):
         new_mon = poly_ring.gens()[start]**i * mon
         if wieghted_max_degree(new_mon,var_wieghts)==k:
           yield new_mon
   else:
-    new_mon  = poly_ring.gens()[start]**(k/var_wieghts[start])
+    new_mon  = poly_ring.gens()[start]**int(floor(k/var_wieghts[start]))
     if wieghted_max_degree(new_mon,var_wieghts)==k:
       yield new_mon
 
