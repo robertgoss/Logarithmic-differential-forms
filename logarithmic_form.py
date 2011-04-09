@@ -85,15 +85,37 @@ class LogarithmicDifferentialForm(SageObject):
 
   def wedge(self,other):
     diff_form = DifferentialForm.wedge(self.form,other.form)
-    total_degree = diff_form.degree()
+    return LogarithmicDifferentialForm.create_from_form(diff_form,self.diff_forms)
+
+  def __add__(self,other):
+    diff_form = self.form+other.form
+    return LogarithmicDifferentialForm.create_from_form(diff_form,self.diff_forms)
+
+  def __sub__(self,other):
+    diff_form = self.form-other.form
+    return LogarithmicDifferentialForm.create_from_form(diff_form,self.diff_forms)
+
+  def __mul__(self,scalar):
+    vec = []
+    for v in self.vec:
+      vec.append(v*scalar)
+    return LogarithmicDifferentialForm(self.form.degree(),vec,self.diff_forms)
+
+  def __rmul__(self,scalar):
+    vec = []
+    for v in self.vec:
+      vec.append(v*scalar)
+    return LogarithmicDifferentialForm(self.form.degree(),vec,self.diff_forms)
+
+  @classmethod
+  def create_from_form(cls,form,diff_forms):
     #Compute vec
     vec = []
-    sym_divisor = convert_polynomial_to_symbolic(self.divisor,self.diff_forms.form_vars)
-    for i,v in enumerate(skew_iter(self.diff_forms.poly_ring.ngens(),total_degree)):
-      sym_poly = diff_form[tuple(v)] * sym_divisor
-      vec.append(convert_symbolic_to_polynomial(sym_poly,self.diff_forms.poly_ring,self.diff_forms.form_vars))
-    return LogarithmicDifferentialForm(total_degree,vec,self.diff_forms)
-
+    sym_divisor = convert_polynomial_to_symbolic(diff_forms.divisor,diff_forms.form_vars)
+    for i,v in enumerate(skew_iter(diff_forms.poly_ring.ngens(),form.degree())):
+      sym_poly = form[tuple(v)] * sym_divisor
+      vec.append(convert_symbolic_to_polynomial(sym_poly,diff_forms.poly_ring,diff_forms.form_vars))
+    return LogarithmicDifferentialForm(form.degree(),vec,diff_forms)
   @classmethod
   def make_unit(cls,diff_forms):
     unit = LogarithmicDifferentialForm(0,[diff_forms.divisor],diff_forms)
