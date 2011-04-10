@@ -213,7 +213,7 @@ class TestSingularModule(unittest.TestCase):
     sm1 = SingularModule([[x,x,x],[y,y,y]])
     self.assertFalse(sm1.is_free())
     
-  def test_create_relation(self):
+  def test_create_relationA(self):
     x = self.x
     y = self.y
     z = self.z
@@ -224,6 +224,18 @@ class TestSingularModule(unittest.TestCase):
     mod = SingularModule.create_from_relation(relation,ideal)
     true_mod = SingularModule([[one,-x**2,x**4],[zero,y,-z**2-1],
                                 [zero,z**2,-x**2*z**2-x**2],[zero,zero,x**2*y-z**2]])
+    self.assertTrue(mod.equals(true_mod))
+
+  def test_create_relationB(self):
+    #From an error uncovered in log derivations
+    x = self.x
+    y = self.y
+    z = self.z
+    zero = self.poly_ring.zero()
+    relation = [y*z,x*z,x*y]
+    ideal = Ideal(self.poly_ring,[x*y*z])
+    mod = SingularModule.create_from_relation(relation,ideal)
+    true_mod = SingularModule([[x,zero,zero],[zero,y,zero],[zero,zero,z]])
     self.assertTrue(mod.equals(true_mod))
     
   def test_create_relation_satisfy_A(self):
