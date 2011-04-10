@@ -129,6 +129,22 @@ class LogarithmicDifferentialForm(SageObject):
       vec.append(v*Rational(scalar))
     return LogarithmicDifferentialForm(self.form.degree(),vec,self.diff_forms)
 
+  def interior_product(self):
+    if self.degree==0:
+      return LogarithmicDifferentialForm.make_zero(0,self.diff_forms)
+    prod_form = DifferentialForm(self.diff_forms.form_space,self.degree-1)
+    for v in skew_iter(self.diff_forms.poly_ring.ngens(),self.degree):
+      for e_i,e in enumerate(v):
+        partial_var = self.diff_forms.form_vars[e]
+        partial_w = self.diff_forms.wieghts[e]
+        partial = ((-1)**(e_i)) * self.form[tuple(v)] * partial_var * partial_w
+        if self.degree>1:
+          rest = [ e_other for e_other in v if e_other != e]
+          prod_form[tuple(rest)] = prod_form[tuple(rest)] + partial
+        else:
+          prod_form = prod_form + partial
+    return LogarithmicDifferentialForm.create_from_form(prod_form,self.diff_forms)
+
   @classmethod
   def create_from_form(cls,form,diff_forms):
     sym_divisor = convert_polynomial_to_symbolic(diff_forms.divisor,diff_forms.form_vars)

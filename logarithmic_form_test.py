@@ -211,5 +211,55 @@ class TestLogarithmicDifferentialForm(unittest.TestCase):
     logdf_form = LogarithmicDifferentialForm.create_from_form(form,self.normal_logdf)
     self.assertTrue(logdf.equals(logdf_form))
 
+  def test_create_from_0_form(self):
+    x = self.normal_logdf.form_vars[0]
+    y = self.normal_logdf.form_vars[1]
+    z = self.normal_logdf.form_vars[2]
+    xp = self.x
+    yp = self.y
+    zp = self.z
+    logdf = LogarithmicDifferentialForm(0,[xp+yp+zp],self.normal_logdf)
+    form = DifferentialForm(self.normal_logdf.form_space,0,(x+y+z)/(x*y*z))
+    logdf_form = LogarithmicDifferentialForm.create_from_form(form,self.normal_logdf)
+    self.assertTrue(logdf.equals(logdf_form))
+
+
+  def test_interior_0_form(self):
+    x = self.x
+    y = self.y
+    z = self.z
+    logdf = LogarithmicDifferentialForm(0,[x*y-y*z+x**2-z**2+x*x-y*z],self.normal_logdf)
+    int_product = logdf.interior_product()
+    zero = LogarithmicDifferentialForm.make_zero(0,self.normal_logdf)
+    self.assertTrue(int_product.equals(zero))
+
+  def test_interior_1_form(self):
+    x = self.normal_logdf.form_vars[0]
+    y = self.normal_logdf.form_vars[1]
+    z = self.normal_logdf.form_vars[2]
+    form = DifferentialForm(self.normal_logdf.form_space,0,(x+y+z)/(x*y*z))
+    one = self.poly_ring.one()
+    logdf = LogarithmicDifferentialForm(1,[one,one,one],self.normal_logdf)
+    int_product = logdf.interior_product()
+    logdf_form = LogarithmicDifferentialForm.create_from_form(form,self.normal_logdf)
+    self.assertTrue(int_product.equals(logdf_form))
+
+  def test_interior(self):
+    xp = self.x
+    yp = self.y
+    zp = self.z
+    logdf = LogarithmicDifferentialForm(2,[xp**2,xp+4*yp+zp,xp**3*zp**3],self.whitney_logdf)
+    int_product = logdf.interior_product()
+    x = self.normal_logdf.form_vars[0]
+    y = self.normal_logdf.form_vars[1]
+    z = self.normal_logdf.form_vars[2]
+    whitney = x**2*y - z**2
+    form = DifferentialForm(self.normal_logdf.form_space,1)
+    form[0] = (-2*x**2*y-2*x*z-8*y*z-2*z**2)/whitney
+    form[1] = (x**3-2*x**3*z**4)/whitney
+    form[2] = (x**2+4*x*y+x*z+2*x**3*y*z**3)/whitney
+    logdf_form = LogarithmicDifferentialForm.create_from_form(form,self.whitney_logdf)
+    self.assertTrue(int_product.equals(logdf_form))
+
 if __name__=="__main__":
     unittest.main()
