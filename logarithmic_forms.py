@@ -24,6 +24,10 @@ from sage.matrix.constructor import matrix
 from singular_module import SingularModule
 from graded_module import GradedModule
 
+from logarithmic_form import LogarithmicDifferentialForm
+from logarithmic_form import convert_symbolic_to_polynomial
+from logarithmic_form import convert_polynomial_to_symbolic
+
 class NotImplementedException(Exception):
   pass
 
@@ -32,7 +36,7 @@ class NotWieghtHomogeneousException(Exception):
   
 class SymbolicNotPolynomialException(Exception):
   pass
-  
+
   
 def homogenous_wieghts(divisor):
   hw = []
@@ -67,34 +71,6 @@ def homogenous_wieghts(divisor):
     raise NotWieghtHomogeneousException
   return hw
   
-def convert_polynomial_to_symbolic(poly,sym_vars):
-  sym_poly = 0
-  coeff = poly.coefficients()
-  expon = poly.exponents()
-  for c,e in zip(coeff,expon):
-    mon = c
-    for e_i,e_m in enumerate(e):
-      mon = mon * sym_vars[e_i]**e_m
-    sym_poly = sym_poly + mon
-  return sym_poly
-  
-def convert_symbolic_to_polynomial(symbolic_poly,poly_ring):
-  try:
-    c = Rational(symbolic_poly)
-    return c*poly_ring.one()
-  except:
-    pass
-  base_ring = poly_ring.base_ring()
-  poly = symbolic_poly.polynomial(base_ring)
-  coeff = poly.coefficients()
-  expon = poly.exponents()
-  final_poly = poly_ring.zero()
-  for c,e in zip(coeff,expon):
-    mon = c*poly_ring.one()
-    for e_i,e_m in enumerate(e):
-      mon = mon * poly_ring.gens()[e_i]**e_m
-    final_poly = final_poly + mon
-  return final_poly
   
 def _log_1_form_rels(divisor):
   poly_ring = divisor.parent()
@@ -127,18 +103,6 @@ def skew_iter(n,depth=1,start=0):
     for i in range(start,n):
       for v in skew_iter(n,depth-1,start+i+1):
         yield [i]+v
-
-def _scale_form(form,scalar,n):
-  #Diff forms dont scale correctly cooercion needs improvement! TODO
-  for v in skew_iter(n,form.degree()):
-    form[tuple(v)] = form[tuple(v)] * scalar
-  return form
-
-def _form_from_vec(vec,basis,poly_ring):
-  form = 0
-  for v,b in zip(vec,basis):
-    form = form + _scale_form(b,v,poly_ring.ngens())
-  return form
       
 class LogarithmicDifferentialForms(SageObject):
   def __init__(self,divisor,var_name="z"):
@@ -161,14 +125,21 @@ class LogarithmicDifferentialForms(SageObject):
     rels = _log_1_form_rels(self.divisor)
     ideals = [[self.divisor]*self.poly_ring for _ in range(len(rels))]
     self._p_modules[1] = SingularModule.create_from_relations(rels,ideals);
+    self._p_gens[1] = []
+    for g in self._p_modules[1].gens:
+      self._p_gens[1].append(LogarithmicDifferentialForm(1,g,self))
     
   def _compute_p_form_generators(self,p):
     if p==0:
       self._p_modules[0] = SingularModule([[self.divisor]])
+      self._p_gens[0] = [LogarithmicDifferentialForm(0,[self.divisor],self)]
       return
     n = self.poly_ring.ngens()
     if p==n:
       self._p_modules[n] = SingularModule([[self.poly_ring.one()]])
+      self._p_gens[n] = [LogarithmicDifferentialForm(0,[self.poly_ring.one()],self)]
+      return
+    if p > n:
       return
     if p==1:
       self._compute_1_form_generators()
@@ -176,24 +147,15 @@ class LogarithmicDifferentialForms(SageObject):
       if not 1 in self._p_modules.keys():
         self._compute_1_form_generators()
       #compute wedges of 1 forms
-      gens_1_forms = self._p_modules[1].gens
-      diff_1_forms = [_make_poly_1_form(polys,self.form_space,self.form_vars) for polys in gens_1_forms]
-      diff_p_forms = []
-      for s in Set(range(len(gens_1_forms))).subsets(p):
-        p_form = DifferentialForm(self.form_space,0,1)
+      self._p_gens[p] = []
+      for s in Set(range(len(self._p_gens[1]))).subsets(p):
+        p_form = LogarithmicDifferentialForm.make_unit(self)
         for i in s:
-          p_form = p_form.wedge(diff_1_forms[i])
-        diff_p_forms.append(p_form)
-      gens_p_forms = []
-      for p_form in diff_p_forms:
-        gen_p_form = []
-        p_vec = self._convert_p_form_to_p_vec(p,p_form)
-        gens_p_forms.append(p_vec)
-      #Normaize out - important
+          p_form = p_form.wedge(self._p_gens[1][i])
+        self._p_gens[p].append(p_form)
       gens = []
-      for gen in gens_p_forms:
-        norm_gen = [g//(self.divisor**(p-1)) for g in gen]
-        gens.append(norm_gen)
+      for p_form in self._p_gens[p]:
+        gens.append(p_form.vec)
       self._p_modules[p] = SingularModule(gens)
 
   def _convert_p_vec_to_p_form(self,p,vec):
@@ -207,7 +169,7 @@ class LogarithmicDifferentialForms(SageObject):
   def _convert_p_form_to_p_vec(self,p,p_form):
     p_vec = []
     for i,v in enumerate(skew_iter(self.poly_ring.ngens(),p)):
-      poly = convert_symbolic_to_polynomial(p_form[tuple(v)],self.poly_ring)
+      poly = convert_symbolic_to_polynomial(p_form[tuple(v)],self.poly_ring,self.form_vars)
       p_vec.append(poly)
     return p_vec
 
@@ -217,11 +179,7 @@ class LogarithmicDifferentialForms(SageObject):
     #the generators of the module of logarithmic differential p-forms
     if p in self._p_gens.keys():
       return self._p_gens[p]
-    if not p in self._p_modules.keys():
-      self._compute_p_form_generators(p)
-    self._p_gens[p] = []
-    for gen in self._p_modules[p].gens:
-      self._p_gens[p].append(self._convert_p_vec_to_p_form(p,gen))
+    self._compute_p_form_generators(p)
     return self._p_gens[p]
     
   def p_module(self,p):
@@ -247,7 +205,7 @@ class LogarithmicDifferentialForms(SageObject):
     basis = self._p_zero_part_basis[p]
     basis_forms = []
     for vec in basis:
-      basis_forms.append(self._convert_p_vec_to_p_form(p,vec))
+      basis_forms.append(LogarithmicDifferentialForm(p,vec,self))
     return basis_forms
 
   def p_module_zero_basis(self,p):
@@ -272,11 +230,10 @@ class LogarithmicDifferentialForms(SageObject):
     return GradedModule(p_mod.gens,column_wieghts,self.wieghts)
 
   def _form_in_terms_of_basis(self,p,form,basis,gm):
-    sym_div = convert_polynomial_to_symbolic(self.divisor,self.form_vars)
-    poly_form = self._convert_p_form_to_p_vec(p,form*sym_div)
+    poly_form = form.vec
     poly_basis = []
     for b in basis:
-      poly_basis.append(self._convert_p_form_to_p_vec(p,form*sym_div))
+      poly_basis.append(form.vec)
     lift_basis = []
     for pb in poly_basis:
       lift_basis.append(gm.lift(pb))
@@ -317,7 +274,11 @@ class LogarithmicDifferentialForms(SageObject):
     hom = ker.quotient(img)
     hom_forms = []
     for b in hom.basis():
-      hom_forms.append(_form_from_vec(hom.lift(b),p_forms_1,self.poly_ring))
+      lift = hom.lift(b)
+      form = LogarithmicDifferentialForm.make_zero(p,self)
+      for l,f in zip(lift,p_forms_1):
+        form = form + (l*f)
+      hom_forms.append(form)
     return hom_forms;
 
   def complement_homology(self):
