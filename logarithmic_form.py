@@ -13,6 +13,8 @@ from sage.tensor.coordinate_patch import CoordinatePatch
 from sage.tensor.differential_forms import DifferentialForms
 from sage.tensor.differential_form_element import DifferentialForm
 
+
+
 from sage.rings.rational_field import QQ
 from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
 from sage.symbolic.ring import var
@@ -66,6 +68,10 @@ def convert_symbolic_to_polynomial(symbolic_poly,poly_ring,sym_vars):
       final_poly = final_poly + mon
   return final_poly
     
+def _get_sym_from_0_form(form,diff_forms):
+  dz = DifferentialForm(diff_forms.form_space,1)
+  dz[(0,)] = 1
+  return form.wedge(dz)[(0,)]
 
 class LogarithmicDifferentialForm(SageObject):
     
@@ -77,12 +83,23 @@ class LogarithmicDifferentialForm(SageObject):
     sym_divisor = convert_polynomial_to_symbolic(self.divisor,self.diff_forms.form_vars)
     #Construct the p_forms version of self
     if degree==0:
-      self.form = DifferentialForm(self.diff_forms.form_space,degree,self.diff_forms.poly_ring.one())
+      sym_poly = convert_polynomial_to_symbolic(self.vec[0],self.diff_forms.form_vars)
+      self.form = DifferentialForm(self.diff_forms.form_space,degree,sym_poly/sym_divisor)
     else:
       self.form = DifferentialForm(self.diff_forms.form_space,degree)
       for i,v in enumerate(skew_iter(self.diff_forms.poly_ring.ngens(),degree)):
         sym_poly = convert_polynomial_to_symbolic(self.vec[i],self.diff_forms.form_vars)
         self.form[tuple(v)] = sym_poly/sym_divisor;
+
+  def equals(self,other):
+    if self.diff_forms==other.diff_forms:
+      if self.degree==other.degree:
+        for self_v,other_v in zip(self.vec,other.vec):
+          if not self_v==other_v:
+            return False
+          return True
+    return False
+
 
   def wedge(self,other):
     diff_form = DifferentialForm.wedge(self.form,other.form)
@@ -114,9 +131,18 @@ class LogarithmicDifferentialForm(SageObject):
 
   @classmethod
   def create_from_form(cls,form,diff_forms):
+    sym_divisor = convert_polynomial_to_symbolic(diff_forms.divisor,diff_forms.form_vars)
+    if form.degree()==0:
+      sym_poly = _get_sym_from_0_form(form,diff_forms)*sym_divisor
+      poly = convert_symbolic_to_polynomial(sym_poly,diff_forms.poly_ring,diff_forms.form_vars)
+      return LogarithmicDifferentialForm(0,[poly],diff_forms)
+    n = diff_forms.poly_ring.ngens()
+    if form.degree()==n:
+      sym_poly = form[tuple(range(n))]*sym_divisor
+      poly = convert_symbolic_to_polynomial(sym_poly,diff_forms.poly_ring,diff_forms.form_vars)
+      return LogarithmicDifferentialForm(n,[poly],diff_forms)
     #Compute vec
     vec = []
-    sym_divisor = convert_polynomial_to_symbolic(diff_forms.divisor,diff_forms.form_vars)
     for i,v in enumerate(skew_iter(diff_forms.poly_ring.ngens(),form.degree())):
       sym_poly = form[tuple(v)] * sym_divisor
       vec.append(convert_symbolic_to_polynomial(sym_poly,diff_forms.poly_ring,diff_forms.form_vars))
