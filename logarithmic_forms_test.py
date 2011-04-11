@@ -135,5 +135,14 @@ class TestLogartihmicDifferentialForms(unittest.TestCase):
       betti[i] = len(h)
     self.assertEqual(betti,{0:1,1:3,2:3,3:1})
 
+  def test_equivarient_homology_whitney(self):
+    crossing = self.x**2*self.y - self.z**2
+    logdf = LogarithmicDifferentialForms(crossing)
+    hom = logdf.equivarient_homology()
+    betti = {}
+    for i,h in hom.iteritems():
+      betti[i] = len(h)
+    self.assertEqual(betti,{0:1,1:0,2:0,3:0})
+
 if __name__=="__main__":
   unittest.main()
