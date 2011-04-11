@@ -85,6 +85,11 @@ class LogarithmicDifferentialForm(SageObject):
     if degree==0:
       sym_poly = convert_polynomial_to_symbolic(self.vec[0],self.diff_forms.form_vars)
       self.form = DifferentialForm(self.diff_forms.form_space,degree,sym_poly/sym_divisor)
+      return
+    if degree==self.diff_forms.poly_ring.ngens():
+      sym_poly = convert_polynomial_to_symbolic(self.vec[0],self.diff_forms.form_vars)
+      self.form = DifferentialForm(self.diff_forms.form_space,degree)
+      self.form[tuple(range(degree))] = sym_poly/sym_divisor
     else:
       self.form = DifferentialForm(self.diff_forms.form_space,degree)
       for i,v in enumerate(skew_iter(self.diff_forms.poly_ring.ngens(),degree)):
