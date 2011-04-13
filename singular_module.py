@@ -179,6 +179,22 @@ class SingularModule(SageObject):
     
   def __repr__(self):
     return "A submodule of the rank "+str(self.rank)+" free module over "+repr(self.poly_ring)+" with generators "+repr(self.gens)
+
+  def lift(self,vector,make_linear=False):
+    ring = self.create_ring_str()
+    moduleA = self.create_module_str("modA")
+    vec_mod = SingularModule([vector])
+    vec_module = vec_mod.create_module_str("modV")
+    std_code = "module lift_mod=lift(modA,modV);\n matrix mat_lift = lift_mod;\n mat_lift;\n"
+    all_code = ring+moduleA+vec_module+std_code
+    singular = Singular()
+    output = singular.eval(all_code)
+    lift_mod = SingularModule.create_from_singular_matrix(self.poly_ring,output,"mat_lift");
+    lift = lift_mod.gens[0]
+    if make_linear:
+      for i,l in enumerate(lift):
+        lift[i] = l.constant_coefficient()
+    return lift
     
   @classmethod
   def create_free_module(cls,n,poly_ring):

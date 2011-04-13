@@ -308,6 +308,38 @@ class TestSingularModule(unittest.TestCase):
     mod_true= [[zero,y,-z],[zero,zero,z],[x*y*z,zero,zero]]
     self.assertEqual(mod.gens,mod_true)
 
+  def test_lift_zero(self):
+    x = self.x
+    y = self.y
+    z = self.z
+    one = self.poly_ring.one()
+    zero = self.poly_ring.zero()
+    sm1 = SingularModule([[x,y+z,z**3-2*y],[x,y,z],[x,y,z**2],[one,x,y]])
+    vec = sm1.lift([zero,zero,zero])
+    self.assertEqual(vec,[zero for _ in range(4)])
+
+  def test_lift_satisfy(self):
+    x = self.x
+    y = self.y
+    z = self.z
+    one = self.poly_ring.one()
+    zero = self.poly_ring.zero()
+    sm1 = SingularModule([[x,y+z,z**3-2*y],[x,y,z]])
+    vec = sm1.lift([x**2+x*z+x,x*y+x*z+y*z+y,z**3*x-2*y*x+z**2+z])
+    self.assertEqual(vec[0]*x+vec[1]*x,x**2+x*z+x)
+    self.assertEqual(vec[0]*(y+z)+vec[1]*y,x*y+x*z+y*z+y)
+    self.assertEqual(vec[0]*(z**3-2*y)+vec[1]*z,z**3*x-2*y*x+z**2+z)
+
+  def test_lift_linear(self):
+    x = self.x
+    y = self.y
+    z = self.z
+    one = self.poly_ring.one()
+    zero = self.poly_ring.zero()
+    sm1 = SingularModule([[x,y+z,z**3-2*y],[x,y,z]])
+    vec = sm1.lift([3*x,3*y+z,z**3-2*y+2*z],True)
+    self.assertEqual(vec,[1,2])
+
 if __name__=="__main__":
   unittest.main()
     

@@ -78,22 +78,6 @@ class GradedModule(SingularModule):
         basis.append(tuple(mon_vec))
     return basis
 
-  def lift(self,vector):
-    degree = self._max_degree(vector)
-    m_basis = self.monomial_basis(degree)
-    mon_vector = {}
-    mon_index = []
-    for mon in m_basis:
-      mon_vector[tuple(mon)] = mon[0].parent().zero()
-      mon_index.append(tuple(mon))
-    for i,poly in enumerate(vector):
-      for c,mon in poly:
-        mon_vector[tuple(mon)] = c
-    m_v = []
-    for mon in mon_index:
-      m_v.append(mon_vector[mon])
-    return m_v
-
   def get_homogeneous_parts(self,vector):
     parts = {}
     for i,shift in enumerate(self.column_wieghts):
