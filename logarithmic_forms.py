@@ -274,7 +274,6 @@ class LogarithmicDifferentialForms(SageObject):
     return hom_forms;
 
   def _p_equivarient_homology(self,p):
-    print "P: ",p
     eqi_p_0_space = [self.p_forms_zero_basis(i) for i in range(p-1,-1,-2)]
     eqi_p_1_space = [self.p_forms_zero_basis(i) for i in range(p,-1,-2)]
     eqi_p_2_space = [self.p_forms_zero_basis(i) for i in range(p+1,-1,-2)]
@@ -295,7 +294,7 @@ class LogarithmicDifferentialForms(SageObject):
           d_form = form.derivative()
           if len(eqi_p_1_space[level_i])!=0:
             d_vec = lift_to_basis(d_form,eqi_p_1_space[level_i],True)
-          if level_i+1<len(eqi_p_1_space) and len(eqi_p_1_space[level_i])!=0:
+          if level_i+1<len(eqi_p_1_space) and len(eqi_p_1_space[level_i+1])!=0:
             i_form = form.interior_product()
             i_vec = lift_to_basis(i_form,eqi_p_1_space[level_i+1],True)
           row = []
@@ -323,7 +322,6 @@ class LogarithmicDifferentialForms(SageObject):
           i_form = form.interior_product()
           if not len(eqi_p_2_space[level_i])==0:
             d_vec = lift_to_basis(d_form,eqi_p_2_space[level_i],True)
-          print "d_vec",d_vec
           if level_i+1<len(eqi_p_2_space) and len(eqi_p_2_space[level_i+1])!=0:
             i_form = form.interior_product()
             i_vec = lift_to_basis(i_form,eqi_p_2_space[level_i+1],True)
@@ -339,14 +337,13 @@ class LogarithmicDifferentialForms(SageObject):
                   row.extend([self.poly_ring.zero() for _ in eqi_p_2_space[lev_i]])
           d_p_1_rows.append(row)
       mat_p_1 = matrix(QQ,d_p_1_rows).transpose()
-      print "Kernel Matrix",mat_p_1
       ker = mat_p_1.right_kernel()   
     hom = ker.quotient(img)
-    return hom
+    return hom.rank()
 
   def equivarient_homology(self):
     homology = {}
-    homology[0] = [1]
+    homology[0] = 1
     for i in range(1,self.poly_ring.ngens()+1):
       homology[i] = self._p_equivarient_homology(i)
     return homology

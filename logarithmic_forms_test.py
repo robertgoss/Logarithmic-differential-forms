@@ -138,11 +138,12 @@ class TestLogartihmicDifferentialForms(unittest.TestCase):
   def test_equivarient_homology_crossing(self):
     crossing = self.x*self.y*self.z
     logdf = LogarithmicDifferentialForms(crossing)
-    print
-    print logdf._p_equivarient_homology(0)
-    print logdf._p_equivarient_homology(1)
-    print logdf._p_equivarient_homology(2)
-    print logdf._p_equivarient_homology(3)
+    self.assertEqual(logdf.equivarient_homology(),{0:1,1:2,2:1,3:1})
+
+  def test_equivarient_homology_whitney(self):
+    whitney = self.x**2*self.y - self.z**2
+    logdf = LogarithmicDifferentialForms(whitney)
+    self.assertEqual(logdf.equivarient_homology(),{0:1,1:0,2:0,3:0})
 
 if __name__=="__main__":
   unittest.main()
