@@ -86,6 +86,20 @@ def _generators_from_relation(rel_coeffs,ideal):
       poss_gens.append([poly_ring.zero()]+red_gen)
   return poss_gens
 
+def wieghts(polynomial):
+  p_mod = SingularModule([[polynomial]])
+  ring = p_mod.create_ring_str()
+  p_mod_str = p_mod.create_module_str("p_mod")
+  mat_code = "matrix mat_p = p_mod;\n"
+  ideal_code = "ideal i_p = mat_p[1,1];\n"
+  qh_code = "weight(i_p);\n"
+  all_code = ring+p_mod_str+mat_code+ideal_code+qh_code
+  singular = Singular()
+  output = singular.eval(all_code)
+  last_line = output.split("\n")[-1]
+  return [int(w) for w in last_line.split(",")]
+  
+
 class SingularModule(SageObject):
   #TODO refactor to spawn only 1 singular process (per module?)
 

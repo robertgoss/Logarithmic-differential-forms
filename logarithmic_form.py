@@ -150,6 +150,9 @@ class LogarithmicDifferentialForm(SageObject):
           prod_form = prod_form + partial
     return LogarithmicDifferentialForm.create_from_form(prod_form,self.diff_forms)
 
+  def __repr__(self):
+    return self.form.__repr__()
+
   @classmethod
   def create_from_form(cls,form,diff_forms):
     sym_divisor = convert_polynomial_to_symbolic(diff_forms.divisor,diff_forms.form_vars)

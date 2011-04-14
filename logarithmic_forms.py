@@ -21,6 +21,7 @@ from sage.modules.free_module import VectorSpace
 from sage.matrix.constructor import matrix
 #TODO - log forms class
 
+import singular_module
 from singular_module import SingularModule
 from graded_module import GradedModule
 
@@ -37,39 +38,17 @@ class NotWieghtHomogeneousException(Exception):
 class SymbolicNotPolynomialException(Exception):
   pass
 
-  
+
 def homogenous_wieghts(divisor):
-  hw = []
-  milp = MixedIntegerLinearProgram(maximization=False)
-  #Use cts to see if solvable - sometimes using intergers in an unsolvable causes a unhandled sigfault
-  wieghts = milp.new_variable(real=True)
-  milp.add_constraint(wieghts[0]>=1)
-  for i in range(divisor.parent().ngens()):
-    milp.add_constraint(wieghts[i+1]>=1)
-  for ex in divisor.exponents():
-    rel = -wieghts[0]
-    for ex_i,ex_m in enumerate(ex):
-      rel = rel + ex_m*wieghts[ex_i+1]
-    milp.add_constraint(rel==0)
-  try:
-    milp.solve()
-    #Redo with integers to get actual solution
-    milp_i = MixedIntegerLinearProgram(maximization=False)
-    wieghts_i = milp_i.new_variable(integer=True)
-    milp_i.add_constraint(wieghts_i[0]>=1)
-    for i in range(divisor.parent().ngens()):
-      milp_i.add_constraint(wieghts_i[i+1]>=1)
-    for ex in divisor.exponents():
-      rel = -wieghts_i[0]
-      for ex_i,ex_m in enumerate(ex):
-        rel = rel + ex_m*wieghts_i[ex_i+1]
-      milp_i.add_constraint(rel==0)
-    milp_i.solve()
-    for i,v in milp_i.get_values(wieghts_i).iteritems():
-      hw.append(v)
-  except:
-    raise NotWieghtHomogeneousException
-  return hw
+  hw = singular_module.wieghts(divisor)
+  for w in hw:
+    if w!=0:
+      degree =  sum([w*e_m for w,e_m in zip(hw,divisor.exponents()[0])])
+      for ex in divisor.exponents():
+        if degree != sum([w*e_m for w,e_m in zip(hw,ex)]):
+          raise NotWieghtHomogeneousException
+      return [degree]+hw
+  raise NotWieghtHomogeneousException
   
   
 def _log_1_form_rels(divisor):
