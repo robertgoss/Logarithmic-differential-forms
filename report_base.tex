@@ -1,0 +1,40 @@
+
+%Setup
+\begin{sagesilent}
+%Divisor%
+\end{sagesilent}
+
+%Import
+\begin{sagesilent}
+ from logarithmic_forms import LogarithmicDifferentialForms
+ from logarithmic_derivations import LogarithmicDerivations
+\end{sagesilent}
+
+\begin{sagesilent}
+ logdf = LogarithmicDifferentialForms(divisor)
+ logder = LogarithmicDerivations(divisor)
+\end{sagesilent}
+
+
+
+\section{Divisor $%DivisorName%$}
+
+\subsection{Basic}
+\subsubsection{Divisor}
+$\sage{divisor}$
+\subsubsection{Polynomial Ring}
+Polynomial ring over the complex numbers with variables $\sage{C.gens()}$
+\subsubsection{Homogeneous Wieghts}
+$\sage{zip(logdf.wieghts,C.gens())}$
+
+\subsection{Logarithmic Derivations}
+\sage{logder} %Reformat this
+
+\subsection{Logarithmic Forms}
+\sage{logdf}
+
+\subsection{Complement Homology}
+$\sage{logdf.complement_homology()}$
+
+\subsection{Equivarient Homology}
+$\sage{logdf.equivarient_homology()}$
