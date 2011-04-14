@@ -31,10 +31,15 @@ def vars_from_divisor(d_string):
     single_vars = re.findall("^[a-z][a-z]^[a-z_]",d_string)
     first_single = re.findall("[a-z][^a-z_]",d_string)
     last_single = re.findall("[^a-z_][a-z]",d_string)
-    var_list.append(first_single[0][0])
-    var_list.append(last_single[0][1])
+    if len(first_single)>0 and len(first_single[0])>0:
+        var_list.append(first_single[0][0])
+    var_list.extend([ls[1] for ls in last_single])
     var_list.extend(underscore_vars)
+    for u_v in underscore_vars:
+        if u_v[0] in var_list:
+            var_list.remove(u_v[0])
     var_list.extend([sv[1] for sv in single_vars])
+    print var_list
     return list(set(var_list))
 
 def create_divisor(d_string):
