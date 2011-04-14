@@ -28,13 +28,19 @@ Polynomial ring over the complex numbers with variables $\sage{C.gens()}$
 $\sage{zip(logdf.wieghts,C.gens())}$
 
 \subsection{Logarithmic Derivations}
+\subsubsection{Is Free}
+\sage{logder.is_free()}
+\subsubsection{Module}
 \sage{logder} %Reformat this
 
 \subsection{Logarithmic Forms}
-\sage{logdf}
+\sage{logdf.latex_basis()}
+
 
 \subsection{Complement Homology}
-$\sage{logdf.complement_homology()}$
+
+\sage{logdf.complement_homology_latex()}
+
 
 \subsection{Equivarient Homology}
 $\sage{logdf.equivarient_homology()}$

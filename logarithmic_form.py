@@ -153,6 +153,25 @@ class LogarithmicDifferentialForm(SageObject):
   def __repr__(self):
     return self.form.__repr__()
 
+  def __latex__(self):
+    if self.degree==0:
+      return "$"+self.form.__repr__()+"$"
+    if self.degree == self.diff_forms.poly_ring.ngens():
+      string =  "$"+self.form[tuple(range(self.degree))].__repr__()
+      diff = []
+      for v in self.diff_forms.form_vars:
+        diff.append("d "+v.__repr__())
+      return string+("\wedge ".join(diff))+"$"
+    parts = []
+    for i,v in enumerate(skew_iter(self.diff_forms.poly_ring.ngens(),self.degree)):
+      if not self.vec[i].is_zero():
+        parts.append("$"+self.form[tuple(v)].__repr__())
+        diff = []
+        for e_i in v:
+          diff.append("d "+self.diff_forms.form_vars[e_i].__repr__())
+        parts[-1] = parts[-1]+("\wedge ".join(diff)) + "$"
+    return "+".join(parts)
+
   @classmethod
   def create_from_form(cls,form,diff_forms):
     sym_divisor = convert_polynomial_to_symbolic(diff_forms.divisor,diff_forms.form_vars)

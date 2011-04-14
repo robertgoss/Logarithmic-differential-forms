@@ -88,14 +88,14 @@ def skew_iter(n,depth=1,start=0):
         yield [i]+v
       
 class LogarithmicDifferentialForms(SageObject):
-  def __init__(self,divisor,var_name="z"):
+  def __init__(self,divisor):
     self.divisor = divisor
     self.poly_ring = divisor.parent()
     hw = homogenous_wieghts(divisor)
     self.wieghts = hw[1:]
     self.degree = hw[0]
     #Setup patch for differential form
-    var_names = [ var_name + str(i) for i in range(self.poly_ring.ngens())]
+    var_names = [ g.__repr__() for g in self.poly_ring.gens()]
     self.form_vars = var(",".join(var_names))
     self.form_patch = CoordinatePatch(self.form_vars)
     self.form_space = DifferentialForms(self.form_patch)
@@ -211,8 +211,18 @@ class LogarithmicDifferentialForms(SageObject):
     if p==self.poly_ring.ngens():
       column_wieghts = [sum(self.wieghts)]
     return GradedModule(p_mod.gens,column_wieghts,self.wieghts)
-
   
+  def _latex_p_part_0_basis(self,p):
+    string = "\subsubsection{$\Omega_0^"+str(p)+"$}"
+    string = string + "\\begin{enumerate}\n"
+    for form in self.p_forms_zero_basis(p):
+      string = string + "\item "+form.__latex__()
+    string = string + "\end{enumerate}"
+    return string
+  
+  def latex_basis(self):
+    return "\n".join([self._latex_p_part_0_basis(p) for p in range(self.poly_ring.ngens())])
+    
   def _p_complement_homology(self,p):
     p_forms_0 = self.p_forms_zero_basis(p-1)
     p_forms_1 = self.p_forms_zero_basis(p)
@@ -329,7 +339,19 @@ class LogarithmicDifferentialForms(SageObject):
 
   def complement_homology(self):
     homology = {}
-    homology[0] = [1]
+    homology[0] = [LogarithmicDifferentialForm.make_unit(self)]
     for i in range(1,self.poly_ring.ngens()+1):
       homology[i] = self._p_complement_homology(i)
     return homology
+
+  def complement_homology_latex(self):
+    string = "\\begin{description}\n"
+    c_h = self.complement_homology()
+    for i in range(self.poly_ring.ngens()+1):
+      string = string+"\item[$H^"+str(i)+"(log D)$] rank: $"+str(len(c_h[i]))+"$\n"
+      string = string + "\\begin{enumerate}\n"
+      for b in c_h[i]:
+        string = string +"\item "+b.__latex__()+"\n"
+      string = string + "\end{enumerate}"
+    return string + "\end{description}\n"
+      
