@@ -213,7 +213,7 @@ class LogarithmicDifferentialForms(SageObject):
     return GradedModule(p_mod.gens,column_wieghts,self.wieghts)
   
   def _latex_p_part_0_basis(self,p):
-    string = "\subsubsection{$\Omega_0^"+str(p)+"$}"
+    string = "\subsubsection{$\Omega_0^"+str(p)+"(log D)$}"
     string = string + "\\begin{enumerate}\n"
     for form in self.p_forms_zero_basis(p):
       string = string + "\item "+form.__latex__()

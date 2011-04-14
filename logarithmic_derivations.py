@@ -20,3 +20,16 @@ class LogarithmicDerivations(SingularModule):
     base_mod = SingularModule.create_from_relation(rel,ideal)
     SingularModule.__init__(self,base_mod.gens)
     self.relation = rel
+
+  def latex_basis(self):
+    string = "\\begin{enumerate}\n"
+    for g in self.gens:
+      string = string + "\item "
+      for g_i,g_p in enumerate(g):
+        parts = []
+        if not g_p.is_zero():
+          parts.append("$"+g_p.__repr__())
+          parts[-1] = parts[-1] + "\\frac{\\partial}{\\partial "+self.poly_ring.gens()[g_i].__repr__() + "}$\n"
+        string = string + "+".join(parts)
+    string = string + "\\end{enumerate}"
+    return string
