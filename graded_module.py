@@ -68,6 +68,9 @@ class GradedModule(SingularModule):
       min_deg = max(max_deg,w+wieghted_max_degree(p,self.var_wieghts))
     return max_deg
 
+  def total_degree(self,vector):
+    return self._min_degree(vector)
+
   def monomial_basis(self,k):
     basis = []
     zero = [self.poly_ring.zero() for _ in range(self.rank)]

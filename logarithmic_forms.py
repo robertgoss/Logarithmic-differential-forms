@@ -229,6 +229,44 @@ class LogarithmicDifferentialForms(SageObject):
       equi_complex.extend(self._complex_complement(level,args))
     return equi_complex
 
+  def _complex_relative(self,n,args):
+    if len(args)==2:
+      complex = []
+      for i in range(args[0],args[1]):
+        complex.append(self._complex_relative(n,i))
+      return complex
+    if n<0 and n>self.poly_ring.ngens():
+      return []
+    if n==0:
+      return self._p_graded_module(n).homogeneous_part_basis(self.degree+args[0])
+    base = self._p_graded_module(n).homogeneous_part_basis(self.degree+args[0])
+    vs_base = VectorSpace(QQ,len(base))
+    pre_base = self._p_graded_module(n-1).homogeneous_part_basis(self.degree+args[0])
+    dh = [self.divisor.derivative(g) for g in self.poly_ring.gens()]
+    dh = LogarithmicDifferentialForm(1,dh,self)
+    rel_gens = []
+    for b in pre_base:
+      w = dh.wedge(b)
+      rel_gens.append(lift_to_basis(w,base))
+    rel = vs_base.subspace(rel_gens)
+    #Orth complement
+    comp = []
+    for b in vs_base.basis():
+      partial = b
+      for d in rel.basis():
+        partial = partial - d*(b.dot_product(d))
+      comp.append(partial)
+    comp = vs_base.subspace(comp)
+    #Lift
+    rel_complex = []
+    for vec in comp.basis():
+      part = LogarithmicDifferentialForm.make_zero(n,self)
+      for c,b in zip(vec,base):
+        part = part + c*b
+      rel_complex.append(part)
+    return rel_complex
+    
+
   def _differential_complement(self,form,args):
     return [form.derivative()]
 
@@ -239,6 +277,37 @@ class LogarithmicDifferentialForms(SageObject):
       return [der]
     else:
       return [der,i]
+
+  def _differential_relative(self,form,args):
+    n = form.degree
+    deg = self._p_graded_module(n).total_degree(form.vec)
+    der = form.derivative()
+    base = self._p_graded_module(n+1).homogeneous_part_basis(self.degree+args[0])
+    vs_base = VectorSpace(QQ,len(base))
+    pre_base = self._p_graded_module(n).homogeneous_part_basis(self.degree+args[0])
+    dh = [self.divisor.derivative(g) for g in self.poly_ring.gens()]
+    dh = LogarithmicDifferentialForm(1,dh,self)
+    rel_gens = []
+    for b in pre_base:
+      w = dh.wedge(b)
+      rel_gens.append(lift_to_basis(w,base))
+    rel = vs_base.subspace(rel_gens)
+    #Orth complement
+    comp = []
+    for b in vs_base.basis():
+      partial = b
+      for d in rel.basis():
+        partial = partial - d*(b.dot_product(d))
+      comp.append(partial)
+    comp = vs_base.subspace(comp)
+    full_base = comp+rel
+    lift = lift_to_basis(der,full_base)
+    lift_prog = lift[:len(comp)]
+    der_prog = LogarithmicDifferentialForm.make_zero(n+1,self)
+    complex = self._complex_relative(n,deg)
+    for c,f in zip(lift_prog,complex):
+      der_prog = der_prog + c*f
+    return der_prog
   
   def complement_homology_latex(self):
     string = "\\begin{description}\n"
