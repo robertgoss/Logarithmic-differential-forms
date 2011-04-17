@@ -69,8 +69,22 @@ def _log_1_form_rels(divisor):
   return rels
 
 def lift_to_basis(form,basis,make_linear=False):
-  b_mod = SingularModule([b.vec for b in basis])
-  return b_mod.lift(form.vec,make_linear)
+  graded_basis = {}
+  poly_ring = basis[0].diff_forms.poly_ring
+  lift = [poly_ring.zero() for _ in basis]
+  for i,b in enumerate(basis):
+    if b.degree in graded_basis.keys():
+      graded_basis[b.degree].append((i,b))
+    else:
+      graded_basis[b.degree] = [(i,b)]
+  for f in form:
+    if f.degree in graded_basis.keys():
+      g_part = graded_basis[f.degree]
+      b_mod = SingularModule([b.vec for _,b in g_part])
+      res = b_mod.lift(f.vec,make_linear)
+      for i,c in enumerate(res):
+        lift[g_part[i][0]] = c
+  return lift
   
 def _make_poly_1_form(polys,differential_forms,sym_vars):
   form = DifferentialForm(differential_forms,1)
@@ -172,31 +186,6 @@ class LogarithmicDifferentialForms(SageObject):
       self._compute_p_form_generators(p)
     return self._p_modules[p]
 
-  def _compute_zero_part_basis(self,p):
-    if p==0:
-      self._p_zero_part_basis[0] = self.p_module(0).gens
-      return
-    g_mod = self._p_graded_module(p)
-    basis = g_mod.homogeneous_part_basis(self.degree)
-    self._p_zero_part_basis[p] = basis
-    
-  def p_forms_zero_basis(self,p):
-    if p > self.poly_ring.ngens():
-      return []
-    if not p in self._p_zero_part_basis.keys():
-      self._compute_zero_part_basis(p)
-    basis = self._p_zero_part_basis[p]
-    basis_forms = []
-    for vec in basis:
-      basis_forms.append(LogarithmicDifferentialForm(p,vec,self))
-    return basis_forms
-
-  def p_module_zero_basis(self,p):
-    if p > self.poly_ring.ngens():
-      return []
-    if not p in self._p_zero_part_basis.keys():
-      self._compute_zero_part_basis(p)
-    return self._p_zero_part_basis[p]
 
   def _p_graded_module(self,p):
     if p > self.poly_ring.ngens():
@@ -208,6 +197,8 @@ class LogarithmicDifferentialForms(SageObject):
       for i in v:
         wsum = wsum + self.wieghts[i]
       column_wieghts.append(wsum)
+    if p==0:
+      column_wieghts = [0]
     if p==self.poly_ring.ngens():
       column_wieghts = [sum(self.wieghts)]
     return GradedModule(p_mod.gens,column_wieghts,self.wieghts)
@@ -223,127 +214,32 @@ class LogarithmicDifferentialForms(SageObject):
   def latex_basis(self):
     return "\n".join([self._latex_p_part_0_basis(p) for p in range(self.poly_ring.ngens())])
     
-  def _p_complement_homology(self,p):
-    p_forms_0 = self.p_forms_zero_basis(p-1)
-    p_forms_1 = self.p_forms_zero_basis(p)
-    p_forms_2 = self.p_forms_zero_basis(p+1)
-    if len(p_forms_1)==0:
-      #In this case img and ker must  be trivial
+  def _complex_complement(self,n,args):
+    if n<0 or n>self.poly_ring.ngens():
       return []
-    if len(p_forms_0)==0:
-      p_space = VectorSpace(QQ,len(p_forms_1)) 
-      img = p_space.subspace([p_space.zero()])
-    else:
-      g_mod_1 = self._p_graded_module(p)
-      d_p_rows = []
-      for form in p_forms_0:
-        d_form = form.derivative()
-        d_p_rows.append(lift_to_basis(d_form,p_forms_1,True))
-      mat_p = matrix(QQ,d_p_rows)
-      img = mat_p.image() # Sage computes the image by left multiplication!
-    if len(p_forms_2)==0:
-      p_space = VectorSpace(QQ,len(p_forms_1))
-      ker = p_space
-    else:
-      g_mod_2 = self._p_graded_module(p+1)
-      d_p_1_rows = []
-      for form in p_forms_1:
-        d_form = form.derivative()
-        d_p_1_rows.append(lift_to_basis(d_form,p_forms_2,True))
-      mat_p_1 = matrix(QQ,d_p_1_rows).transpose()
-      ker = mat_p_1.right_kernel()
-    hom = ker.quotient(img)
-    hom_forms = []
-    for b in hom.basis():
-      lift = hom.lift(b)
-      form = LogarithmicDifferentialForm.make_zero(p,self)
-      for l,f in zip(lift,p_forms_1):
-        form = form + (l*f)
-      hom_forms.append(form)
-    return hom_forms;
+    basis = self._p_graded_module(n).homogeneous_part_basis(self.degree)
+    complex = []
+    for b in basis:
+      complex.append(LogarithmicDifferentialForm(n,b,self))
+    return complex
 
-  def _p_equivarient_homology(self,p):
-    eqi_p_0_space = [self.p_forms_zero_basis(i) for i in range(p-1,-1,-2)]
-    eqi_p_1_space = [self.p_forms_zero_basis(i) for i in range(p,-1,-2)]
-    eqi_p_2_space = [self.p_forms_zero_basis(i) for i in range(p+1,-1,-2)]
-    eqi_dim_0 = sum([len(b) for b in eqi_p_0_space])
-    eqi_dim_1 = sum([len(b) for b in eqi_p_1_space])
-    eqi_dim_2 = sum([len(b) for b in eqi_p_2_space])
-    if eqi_dim_1==0:
-      return []
-    if eqi_dim_0==0:
-      p_space = VectorSpace(QQ,eqi_dim_1)
-      img = p_space.subspace([p_space.zero()])
+  def _complex_equivarient(self,n,args):
+    equi_complex = []
+    for level in range(n,-1,-2):
+      equi_complex.extend(self._complex_complement(level,args))
+    return equi_complex
+
+  def _differential_complement(self,form,args):
+    return [form.derivative()]
+
+  def _differential_equivarient(self,form,args):
+    der = form.derivative()
+    i = form.interior_product()
+    if form.degree<1:
+      return [der]
     else:
-      g_mods_1 = [self._p_graded_module(i) for i in range(p,-1,-2)]
-      d_p_rows = []
-      for level_i,level in enumerate(eqi_p_0_space):
-        level_dim = p-(level_i*2)
-        for form in level:
-          d_form = form.derivative()
-          if len(eqi_p_1_space[level_i])!=0:
-            d_vec = lift_to_basis(d_form,eqi_p_1_space[level_i],True)
-          if level_i+1<len(eqi_p_1_space) and len(eqi_p_1_space[level_i+1])!=0:
-            i_form = form.interior_product()
-            i_vec = lift_to_basis(i_form,eqi_p_1_space[level_i+1],True)
-          row = []
-          for lev_i,lev in enumerate(eqi_p_1_space):
-            if len(eqi_p_1_space[lev_i])!=0:
-              if lev_i == level_i:
-                row.extend(d_vec)
-              else:
-                if lev_i == level_i+1:
-                  row.extend(i_vec)
-                else:
-                  row.extend([self.poly_ring.zero() for _ in eqi_p_1_space[lev_i]])
-          d_p_rows.append(row)
-      mat_p = matrix(QQ,d_p_rows)
-      img = mat_p.image() # Sage computes the image by left multiplication!    
-    if eqi_dim_2==0:
-      p_space = VectorSpace(QQ,eqi_dim_1)
-      ker = p_space
-    else:
-      g_mods_2 = [self._p_graded_module(i) for i in range(p+1,-1,-2)]
-      d_p_1_rows = []
-      for level_i,level in enumerate(eqi_p_1_space):
-        for form in level:
-          d_form = form.derivative()
-          i_form = form.interior_product()
-          if not len(eqi_p_2_space[level_i])==0:
-            d_vec = lift_to_basis(d_form,eqi_p_2_space[level_i],True)
-          if level_i+1<len(eqi_p_2_space) and len(eqi_p_2_space[level_i+1])!=0:
-            i_form = form.interior_product()
-            i_vec = lift_to_basis(i_form,eqi_p_2_space[level_i+1],True)
-          row = []
-          for lev_i,lev in enumerate(eqi_p_2_space):
-            if len(eqi_p_2_space[lev_i])!=0:
-              if lev_i == level_i:
-                row.extend(d_vec)
-              else:
-                if lev_i == level_i+1:
-                  row.extend(i_vec)
-                else:
-                  row.extend([self.poly_ring.zero() for _ in eqi_p_2_space[lev_i]])
-          d_p_1_rows.append(row)
-      mat_p_1 = matrix(QQ,d_p_1_rows).transpose()
-      ker = mat_p_1.right_kernel()   
-    hom = ker.quotient(img)
-    return hom.rank()
-
-  def equivarient_homology(self):
-    homology = {}
-    homology[0] = 1
-    for i in range(1,self.poly_ring.ngens()+1):
-      homology[i] = self._p_equivarient_homology(i)
-    return homology
-
-  def complement_homology(self):
-    homology = {}
-    homology[0] = [LogarithmicDifferentialForm.make_unit(self)]
-    for i in range(1,self.poly_ring.ngens()+1):
-      homology[i] = self._p_complement_homology(i)
-    return homology
-
+      return [der,i]
+  
   def complement_homology_latex(self):
     string = "\\begin{description}\n"
     c_h = self.complement_homology()
@@ -354,4 +250,50 @@ class LogarithmicDifferentialForms(SageObject):
         string = string +"\item "+b.__latex__()+"\n"
       string = string + "\end{enumerate}"
     return string + "\end{description}\n"
+
+  def chain_complex(self,varient="complement",args = None,return_range=None):
+    cc = {}
+    if return_range==None:
+      return_range = (0,self.poly_ring.ngens())
+    for i in range(return_range[0],return_range[1]+1):
+      cc[i] = getattr(self,"_complex_"+varient)(i,args)
+    return cc
+
+  def differential(self,form,varient="complement",args=None):
+    return getattr(self,"_differential_"+varient)(form,args)
+
+  def homology(self,varient="complement",args=None):
+    hom = {}
+    cc = self.chain_complex(varient,args,(-1,self.poly_ring.ngens()+1))
+    #Some need wider return range
+    for i in range(self.poly_ring.ngens()+1):
+      vs_am = VectorSpace(QQ,len(cc[i]))
+      if len(cc[i])==0:
+        hom[i] = []
+        continue
+      if len(cc[i-1])!=0:
+        d_im = []
+        for b in cc[i-1]:
+          d_b = self.differential(b,varient,args)
+          d_im.append(lift_to_basis(d_b,cc[i]))
+        img = vs_am.subspace(d_im)
+      else:
+        img = vs_am.subspace([vs_am.zero()])
+      if len(cc[i+1])!=0:
+        d_ker = []
+        for b in cc[i]:
+          d_b = self.differential(b,varient,args)
+          d_ker.append(lift_to_basis(d_b,cc[i+1]))
+        ker = (matrix(QQ,d_ker)).left_kernel()
+      else:
+        ker = vs_am
+      quo = ker.quotient(img)
+      hom[i] = []
+      for b in quo.basis():
+        vec = quo.lift(b)
+        part_sum = LogarithmicDifferentialForm.make_zero(i,self)
+        for c,f in zip(vec,cc[i]):
+          part_sum = part_sum + c*f
+        hom[i].append(part_sum)
+    return hom
       

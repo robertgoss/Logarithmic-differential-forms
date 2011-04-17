@@ -120,30 +120,60 @@ class TestLogartihmicDifferentialForms(unittest.TestCase):
     crossing_3_module = SingularModule([[self.poly_ring.one()]])
     self.assertTrue(crossing_3_module.equals(logdf.p_module(3)))
 
-  def test_zero_part_crossing_forms(self):
+  def test_complement_complex_crossing(self):
     crossing = self.x*self.y*self.z
     logdf = LogarithmicDifferentialForms(crossing)
-    for i in range(4):
-      self.assertEqual(len(logdf.p_forms_zero_basis(i)),len(logdf.p_form_generators(i)))
-    
-  def test_complement_homology(self):
-    crossing = self.x*self.y*self.z
-    logdf = LogarithmicDifferentialForms(crossing)
-    hom = logdf.complement_homology()
-    betti = {}
-    for i,h in hom.iteritems():
-      betti[i] = len(h)
-    self.assertEqual(betti,{0:1,1:3,2:3,3:1})
+    complex = logdf.chain_complex("complement")
+    complex_size = {}
+    for i,c in complex.iteritems():
+      complex_size[i] = len(c)
+    self.assertEqual(complex_size,{0:1,1:3,2:3,3:1})
 
-  def test_equivarient_homology_crossing(self):
-    crossing = self.x*self.y*self.z
-    logdf = LogarithmicDifferentialForms(crossing)
-    self.assertEqual(logdf.equivarient_homology(),{0:1,1:2,2:1,3:1})
-
-  def test_equivarient_homology_whitney(self):
+  def test_complement_complex_whitney(self):
     whitney = self.x**2*self.y - self.z**2
     logdf = LogarithmicDifferentialForms(whitney)
-    self.assertEqual(logdf.equivarient_homology(),{0:1,1:0,2:0,3:0})
+    complex = logdf.chain_complex("complement")
+    complex_size = {}
+    for i,c in complex.iteritems():
+      complex_size[i] = len(c)
+    self.assertEqual(complex_size,{0:1,1:1,2:0,3:0})
+
+  def test_equi_complex_crossing(self):
+    crossing = self.x*self.y*self.z
+    logdf = LogarithmicDifferentialForms(crossing)
+    complex = logdf.chain_complex("equivarient")
+    complex_size = {}
+    for i,c in complex.iteritems():
+      complex_size[i] = len(c)
+    self.assertEqual(complex_size,{0:1,1:3,2:4,3:4})
+
+  def test_equi_complex_whitney(self):
+    whitney = self.x**2*self.y - self.z**2
+    logdf = LogarithmicDifferentialForms(whitney)
+    complex = logdf.chain_complex("equivarient")
+    complex_size = {}
+    for i,c in complex.iteritems():
+      complex_size[i] = len(c)
+    self.assertEqual(complex_size,{0:1,1:1,2:1,3:1})
+
+  def test_complement_homology_crossing(self):
+    crossing = self.x*self.y*self.z
+    logdf = LogarithmicDifferentialForms(crossing)
+    homology = logdf.homology("complement")
+    homology_size = {}
+    for i,c in homology.iteritems():
+      homology_size[i] = len(c)
+    self.assertEqual(homology_size,{0:1,1:3,2:3,3:1})
+
+  def test_equi_homology_whitney(self):
+    whitney = self.x**2*self.y-self.z**2
+    logdf = LogarithmicDifferentialForms(whitney)
+    homology = logdf.homology("equivarient")
+    homology_size = {}
+    for i,c in homology.iteritems():
+      homology_size[i] = len(c)
+    self.assertEqual(homology_size,{0:1,1:0,2:0,3:0})
+
 
 if __name__=="__main__":
   unittest.main()
