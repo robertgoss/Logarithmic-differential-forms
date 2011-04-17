@@ -50,6 +50,20 @@ def homogenous_wieghts(divisor):
       return [degree]+hw
   raise NotWieghtHomogeneousException
   
+def _weighted_sum(weights,forms,diff_forms):
+  part = Logarithmic_Form.make_zero(forms[0].degree,diff_forms)
+  for w,f in zip(weights,forms):
+    part = part + w*f
+  return part
+
+def orth_complement(space,subspace):
+  comp_basis = []
+  for b in space.basis():
+    prog = b
+    for c_b in subspace.basis():
+      proj = proj - c_b*(b.dot_product(c_b))
+    comp_basis.append(proj)
+  return space.subspace(comp_basis)
   
 def _log_1_form_rels(divisor):
   poly_ring = divisor.parent()
@@ -249,21 +263,11 @@ class LogarithmicDifferentialForms(SageObject):
       w = dh.wedge(b)
       rel_gens.append(lift_to_basis(w,base))
     rel = vs_base.subspace(rel_gens)
-    #Orth complement
-    comp = []
-    for b in vs_base.basis():
-      partial = b
-      for d in rel.basis():
-        partial = partial - d*(b.dot_product(d))
-      comp.append(partial)
-    comp = vs_base.subspace(comp)
+    comp = orth_complement(vs_base,rel)
     #Lift
     rel_complex = []
     for vec in comp.basis():
-      part = LogarithmicDifferentialForm.make_zero(n,self)
-      for c,b in zip(vec,base):
-        part = part + c*b
-      rel_complex.append(part)
+      rel_complex.append(LogarithmicDifferentialForm(_weighted_sum(vec,base)))
     return rel_complex
     
 
@@ -282,32 +286,19 @@ class LogarithmicDifferentialForms(SageObject):
     n = form.degree
     deg = self._p_graded_module(n).total_degree(form.vec)
     der = form.derivative()
-    base = self._p_graded_module(n+1).homogeneous_part_basis(self.degree+args[0])
-    vs_base = VectorSpace(QQ,len(base))
-    pre_base = self._p_graded_module(n).homogeneous_part_basis(self.degree+args[0])
-    dh = [self.divisor.derivative(g) for g in self.poly_ring.gens()]
-    dh = LogarithmicDifferentialForm(1,dh,self)
-    rel_gens = []
-    for b in pre_base:
-      w = dh.wedge(b)
-      rel_gens.append(lift_to_basis(w,base))
-    rel = vs_base.subspace(rel_gens)
-    #Orth complement
-    comp = []
-    for b in vs_base.basis():
-      partial = b
-      for d in rel.basis():
-        partial = partial - d*(b.dot_product(d))
-      comp.append(partial)
-    comp = vs_base.subspace(comp)
-    full_base = comp+rel
-    lift = lift_to_basis(der,full_base)
-    lift_prog = lift[:len(comp)]
-    der_prog = LogarithmicDifferentialForm.make_zero(n+1,self)
-    complex = self._complex_relative(n,deg)
-    for c,f in zip(lift_prog,complex):
-      der_prog = der_prog + c*f
-    return der_prog
+    full = self._p_graded_module(n+1).homogeneous_part_basis(self.degree+deg)
+    full_forms = [LogarithmicDifferentialForm(n+1,b,self) for b in full]
+    full_space = VectorSpace(QQ,len(full))
+    target_comp = self._complex_relative(n+1,deg)
+    comp_vecs = []
+    for b in target_comp:
+      comp_vecs.append(lift_to_basis(b,full_forms))
+    comp_vecs = full_space.subspace(comp_vecs)
+    rel_vecs = orth_complement(full_space,comp_vecs)
+    lift = lift_to_basis(der,comp_vecs+rel_vecs)
+    lift_prog = lift[:len(comp_vecs)]
+    return _weighted_sum(lift_prog,target_comp)
+    
   
   def complement_homology_latex(self):
     string = "\\begin{description}\n"
