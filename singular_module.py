@@ -86,6 +86,8 @@ def _generators_from_relation(rel_coeffs,ideal):
       poss_gens.append([poly_ring.zero()]+red_gen)
   return poss_gens
 
+_singular_inst = Singular()
+
 def wieghts(polynomial):
   p_mod = SingularModule([[polynomial]])
   ring = p_mod.create_ring_str()
@@ -94,11 +96,10 @@ def wieghts(polynomial):
   ideal_code = "ideal i_p = mat_p[1,1];\n"
   qh_code = "weight(i_p);\n"
   all_code = ring+p_mod_str+mat_code+ideal_code+qh_code
-  singular = Singular()
-  output = singular.eval(all_code)
+  output = _singular_inst.eval(all_code)
   last_line = output.split("\n")[-1]
   return [int(w) for w in last_line.split(",")]
-  
+
 
 class SingularModule(SageObject):
   #TODO refactor to spawn only 1 singular process (per module?)
@@ -122,8 +123,7 @@ class SingularModule(SageObject):
     #See if reduction of vec is 0
     contain_code = "reduce(vec,std(modA));\n"
     all_code = ring+module+vector+contain_code;
-    singular = Singular()
-    output = singular.eval(all_code)
+    output = _singular_inst.eval(all_code)
     last_line = output.split('\n')[-1];
     if last_line=="_[1]=0":
       return True
@@ -146,8 +146,7 @@ class SingularModule(SageObject):
     moduleB = module.create_module_str("modB")
     intersect_code = "module inter=intersect(modA,modB);\n matrix mat_inter = inter;\n mat_inter;\n";
     all_code = ring+moduleA+moduleB+intersect_code;
-    singular = Singular()
-    output = singular.eval(all_code)
+    output = _singular_inst.eval(all_code)
     mod_iter = SingularModule.create_from_singular_matrix(self.poly_ring,output,"mat_inter");
     return mod_iter
     
@@ -169,8 +168,7 @@ class SingularModule(SageObject):
     moduleA = self.create_module_str("modA")
     std_code = "module std_mod=std(modA);\n matrix mat_std = std_mod;\n mat_std;\n"
     all_code = ring+moduleA+std_code
-    singular = Singular()
-    output = singular.eval(all_code)
+    output = _singular_inst.eval(all_code)
     std_mod = SingularModule.create_from_singular_matrix(self.poly_ring,output,"mat_std");
     return std_mod.gens
     
@@ -201,8 +199,7 @@ class SingularModule(SageObject):
     vec_module = vec_mod.create_module_str("modV")
     std_code = "module lift_mod=lift(modA,modV);\n matrix mat_lift = lift_mod;\n mat_lift;\n"
     all_code = ring+moduleA+vec_module+std_code
-    singular = Singular()
-    output = singular.eval(all_code)
+    output = _singular_inst.eval(all_code)
     lift_mod = SingularModule.create_from_singular_matrix(self.poly_ring,output,"mat_lift");
     lift = lift_mod.gens[0]
     if make_linear:
