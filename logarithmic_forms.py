@@ -26,6 +26,7 @@ from singular_module import SingularModule
 from graded_module import GradedModule
 
 from logarithmic_form import LogarithmicDifferentialForm
+from logarithmic_form import skew_iter
 from logarithmic_form import convert_symbolic_to_polynomial
 from logarithmic_form import convert_polynomial_to_symbolic
 
@@ -105,15 +106,6 @@ def _make_poly_1_form(polys,differential_forms,sym_vars):
   for i,poly in enumerate(polys):
     form[i] = convert_polynomial_to_symbolic(poly,sym_vars)
   return form
-  
-def skew_iter(n,depth=1,start=0):
-  if depth == 1:
-    for i in range(start,n):
-      yield [i]
-  else:
-    for i in range(start,n):
-      for v in skew_iter(n,depth-1,start+i+1):
-        yield [i]+v
       
 class LogarithmicDifferentialForms(SageObject):
   def __init__(self,divisor):
