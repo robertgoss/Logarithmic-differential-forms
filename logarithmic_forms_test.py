@@ -120,6 +120,16 @@ class TestLogartihmicDifferentialForms(unittest.TestCase):
     crossing_3_module = SingularModule([[self.poly_ring.one()]])
     self.assertTrue(crossing_3_module.equals(logdf.p_module(3)))
 
+  def test_p_module_n_crossing(self):
+    #Make sure this doesnt throw an error - fix bug
+    for i in range(4,5):
+      p_ring = PolynomialRing(QQ,i,"z")
+      crossing = p_ring.one()
+      for g in p_ring.gens():
+        crossing *= g
+      logdf = LogarithmicDifferentialForms(crossing)
+      logdf.p_module(i-1)
+
   def test_complement_complex_crossing(self):
     crossing = self.x*self.y*self.z
     logdf = LogarithmicDifferentialForms(crossing)

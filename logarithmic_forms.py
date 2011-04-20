@@ -220,7 +220,8 @@ class LogarithmicDifferentialForms(SageObject):
   def _latex_p_part_0_basis(self,p):
     string = "\subsubsection{$\Omega_0^"+str(p)+"(log D)$}"
     string = string + "\\begin{enumerate}\n"
-    for form in self.p_forms_zero_basis(p):
+    zero_part = self._p_graded_module(p).homogeneous_part_basis(self.degree)
+    for form in zero_part:
       string = string + "\item "+form.__latex__()
     string = string + "\end{enumerate}"
     return string

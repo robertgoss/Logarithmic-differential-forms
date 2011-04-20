@@ -27,9 +27,13 @@ def skew_iter(ngens,degree=1,start=0):
     for i in range(start,ngens):
       yield [i]
   else:
-    for i in range(start,ngens):
-      for v in skew_iter(ngens,degree-1,start+i+1):
-        yield [i]+v
+    if degree == ngens-1:
+      for i in range(ngens-1,start-1,-1):
+        yield range(i) + range(i+1,ngens)
+    else:
+      for i in range(start,ngens):
+        for v in skew_iter(ngens,degree-1,start+i+1):
+          yield [i]+v
 
 def convert_polynomial_to_symbolic(poly,sym_vars):
   sym_poly = 0
