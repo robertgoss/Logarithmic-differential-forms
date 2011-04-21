@@ -240,10 +240,11 @@ class LogarithmicDifferentialForms(SageObject):
       for i in range(args[0],args[1]):
         complex.append(self._complex_relative(n,i))
       return complex
-    if n<0 and n>self.poly_ring.ngens():
+    if n<0 or n>self.poly_ring.ngens():
       return []
     if n==0:
-      return self._p_graded_module(n).homogeneous_part_basis(self.degree+args[0])
+      hom_basis = self._p_graded_module(n).homogeneous_part_basis(self.degree+args[0])
+      return [LogarithmicDifferentialForm(n,b,self) for b in hom_basis]
     base = self._p_graded_module(n).homogeneous_part_basis(self.degree+args[0])
     if len(base)==0:
       return []
@@ -282,19 +283,19 @@ class LogarithmicDifferentialForms(SageObject):
   def _differential_relative(self,form,*args):
     n = form.degree
     deg = self._p_graded_module(n).total_degree(form.vec)
+    deg -= self.degree
     der = form.derivative()
     full = self._p_graded_module(n+1).homogeneous_part_basis(self.degree+deg)
     full_forms = [LogarithmicDifferentialForm(n+1,b,self) for b in full]
     full_space = VectorSpace(QQ,len(full))
-    target_comp = self._complex_relative(n+1,deg,*args)
+    target_comp = self._complex_relative(n+1,deg)
     comp_vecs = []
     for b in target_comp:
-      comp_vecs.append(lift_to_basis(b,full_forms))
+      comp_vecs.append(lift_to_basis([b],full_forms))
     comp_vecs = full_space.subspace(comp_vecs)
-    rel_vecs = orth_complement(full_space,comp_vecs)
-    lift = lift_to_basis(der,comp_vecs+rel_vecs)
-    lift_prog = lift[:len(comp_vecs)]
-    return _weighted_sum(lift_prog,target_comp)
+    lift_full = lift_to_basis([der],full_forms)
+    lift_prog = comp_vecs.basis_matrix()*vector(lift_full)
+    return [_weighted_sum(lift_prog,target_comp,self)]
     
   
   def complement_homology_latex(self):

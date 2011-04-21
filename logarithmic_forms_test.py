@@ -246,6 +246,24 @@ class TestLogartihmicDifferentialForms(unittest.TestCase):
       homology_size[i] = len(c)
     self.assertEqual(homology_size,{0:1,1:0,2:0,3:0})
 
+  def test_relative_homology_0_crossing(self):
+    crossing = self.x*self.y*self.z
+    logdf = LogarithmicDifferentialForms(crossing)
+    homology = logdf.homology("relative",0)
+    homology_size = {}
+    for i,c in homology.iteritems():
+      homology_size[i] = len(c)
+    self.assertEqual(homology_size,{0:1,1:2,2:1,3:0})
+
+  def test_relative_homology_0_whitney(self):
+    whitney = self.x**2*self.y-self.z**2
+    logdf = LogarithmicDifferentialForms(whitney)
+    homology = logdf.homology("relative",0)
+    homology_size = {}
+    for i,c in homology.iteritems():
+      homology_size[i] = len(c)
+    self.assertEqual(homology_size,{0:1,1:0,2:0,3:0})
+
 
 if __name__=="__main__":
   unittest.main()

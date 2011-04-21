@@ -65,8 +65,8 @@ class GradedModule(SingularModule):
   def _min_degree(self,vector):
     min_deg = self._max_degree(vector)
     for p,w in zip(vector,self.column_wieghts):
-      min_deg = max(max_deg,w+wieghted_max_degree(p,self.var_wieghts))
-    return max_deg
+      min_deg = max(min_deg,w+wieghted_max_degree(p,self.var_wieghts))
+    return min_deg
 
   def total_degree(self,vector):
     return self._min_degree(vector)
