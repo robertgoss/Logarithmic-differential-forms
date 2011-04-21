@@ -52,19 +52,17 @@ def homogenous_wieghts(divisor):
   raise NotWieghtHomogeneousException
   
 def _weighted_sum(weights,forms,diff_forms):
-  part = Logarithmic_Form.make_zero(forms[0].degree,diff_forms)
+  part = LogarithmicDifferentialForm.make_zero(forms[0].degree,diff_forms)
   for w,f in zip(weights,forms):
     part = part + w*f
   return part
 
 def orth_complement(space,subspace):
-  comp_basis = []
-  for b in space.basis():
-    prog = b
-    for c_b in subspace.basis():
-      proj = proj - c_b*(b.dot_product(c_b))
-    comp_basis.append(proj)
-  return space.subspace(comp_basis)
+  if subspace.dimension()==0:
+    return space
+  else:
+    ker = subspace.basis_matrix().right_kernel()
+    return space.intersection(ker)
   
 def _log_1_form_rels(divisor):
   poly_ring = divisor.parent()
@@ -221,7 +219,7 @@ class LogarithmicDifferentialForms(SageObject):
   def latex_basis(self):
     return "\n".join([self._latex_p_part_0_basis(p) for p in range(self.poly_ring.ngens())])
     
-  def _complex_complement(self,n,args):
+  def _complex_complement(self,n,*args):
     if n<0 or n>self.poly_ring.ngens():
       return []
     basis = self._p_graded_module(n).homogeneous_part_basis(self.degree)
@@ -230,13 +228,13 @@ class LogarithmicDifferentialForms(SageObject):
       complex.append(LogarithmicDifferentialForm(n,b,self))
     return complex
 
-  def _complex_equivarient(self,n,args):
+  def _complex_equivarient(self,n,*args):
     equi_complex = []
     for level in range(n,-1,-2):
-      equi_complex.extend(self._complex_complement(level,args))
+      equi_complex.extend(self._complex_complement(level,*args))
     return equi_complex
 
-  def _complex_relative(self,n,args):
+  def _complex_relative(self,n,*args):
     if len(args)==2:
       complex = []
       for i in range(args[0],args[1]):
@@ -247,27 +245,33 @@ class LogarithmicDifferentialForms(SageObject):
     if n==0:
       return self._p_graded_module(n).homogeneous_part_basis(self.degree+args[0])
     base = self._p_graded_module(n).homogeneous_part_basis(self.degree+args[0])
+    if len(base)==0:
+      return []
     vs_base = VectorSpace(QQ,len(base))
+    df_base = [LogarithmicDifferentialForm(n,b,self) for b in base]
     pre_base = self._p_graded_module(n-1).homogeneous_part_basis(self.degree+args[0])
+    if len(pre_base)==0:
+      return df_base
     dh = [self.divisor.derivative(g) for g in self.poly_ring.gens()]
     dh = LogarithmicDifferentialForm(1,dh,self)
     rel_gens = []
     for b in pre_base:
-      w = dh.wedge(b)
-      rel_gens.append(lift_to_basis(w,base))
+      b_form = LogarithmicDifferentialForm(n-1,b,self)
+      w = dh.wedge(b_form)
+      rel_gens.append(lift_to_basis([w],df_base))
     rel = vs_base.subspace(rel_gens)
     comp = orth_complement(vs_base,rel)
     #Lift
     rel_complex = []
     for vec in comp.basis():
-      rel_complex.append(LogarithmicDifferentialForm(_weighted_sum(vec,base)))
+      rel_complex.append(_weighted_sum(vec,df_base,self))
     return rel_complex
     
 
-  def _differential_complement(self,form,args):
+  def _differential_complement(self,form,*args):
     return [form.derivative()]
 
-  def _differential_equivarient(self,form,args):
+  def _differential_equivarient(self,form,*args):
     der = form.derivative()
     i = form.interior_product()
     if form.degree<1:
@@ -275,14 +279,14 @@ class LogarithmicDifferentialForms(SageObject):
     else:
       return [der,i]
 
-  def _differential_relative(self,form,args):
+  def _differential_relative(self,form,*args):
     n = form.degree
     deg = self._p_graded_module(n).total_degree(form.vec)
     der = form.derivative()
     full = self._p_graded_module(n+1).homogeneous_part_basis(self.degree+deg)
     full_forms = [LogarithmicDifferentialForm(n+1,b,self) for b in full]
     full_space = VectorSpace(QQ,len(full))
-    target_comp = self._complex_relative(n+1,deg)
+    target_comp = self._complex_relative(n+1,deg,*args)
     comp_vecs = []
     for b in target_comp:
       comp_vecs.append(lift_to_basis(b,full_forms))
@@ -304,20 +308,20 @@ class LogarithmicDifferentialForms(SageObject):
       string = string + "\end{enumerate}"
     return string + "\end{description}\n"
 
-  def chain_complex(self,varient="complement",args = None,return_range=None):
+  def chain_complex(self,varient="complement",return_range=None,*args):
     cc = {}
     if return_range==None:
       return_range = (0,self.poly_ring.ngens())
     for i in range(return_range[0],return_range[1]+1):
-      cc[i] = getattr(self,"_complex_"+varient)(i,args)
+      cc[i] = getattr(self,"_complex_"+varient)(i,*args)
     return cc
 
-  def differential(self,form,varient="complement",args=None):
-    return getattr(self,"_differential_"+varient)(form,args)
+  def differential(self,form,varient="complement",*args):
+    return getattr(self,"_differential_"+varient)(form,*args)
 
-  def homology(self,varient="complement",args=None):
+  def homology(self,varient="complement",*args):
     hom = {}
-    cc = self.chain_complex(varient,args,(-1,self.poly_ring.ngens()+1))
+    cc = self.chain_complex(varient,(-1,self.poly_ring.ngens()+1),*args)
     #Some need wider return range
     for i in range(self.poly_ring.ngens()+1):
       vs_am = VectorSpace(QQ,len(cc[i]))
@@ -327,7 +331,7 @@ class LogarithmicDifferentialForms(SageObject):
       if len(cc[i-1])!=0:
         d_im = []
         for b in cc[i-1]:
-          d_b = self.differential(b,varient,args)
+          d_b = self.differential(b,varient,*args)
           d_im.append(lift_to_basis(d_b,cc[i]))
         img = vs_am.subspace(d_im)
       else:
@@ -335,7 +339,7 @@ class LogarithmicDifferentialForms(SageObject):
       if len(cc[i+1])!=0:
         d_ker = []
         for b in cc[i]:
-          d_b = self.differential(b,varient,args)
+          d_b = self.differential(b,varient,*args)
           d_ker.append(lift_to_basis(d_b,cc[i+1]))
         ker = (matrix(QQ,d_ker)).left_kernel()
       else:

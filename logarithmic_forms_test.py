@@ -7,11 +7,13 @@ from logarithmic_forms import NotWieghtHomogeneousException
 from logarithmic_forms import convert_polynomial_to_symbolic
 from logarithmic_forms import convert_symbolic_to_polynomial
 from logarithmic_forms import skew_iter
+from logarithmic_forms import orth_complement
 from logarithmic_forms import LogarithmicDifferentialForms
 
 from singular_module import SingularModule
 
 from sage.rings.rational_field import QQ
+from sage.modules.free_module import VectorSpace
 from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
 from sage.symbolic.ring import var
 
@@ -50,6 +52,41 @@ class TestHomogeneousWieghts(unittest.TestCase):
     z = self.z
     divisor = x**2*y-x**3 + z +y**2;
     self.assertRaises(NotWieghtHomogeneousException,homogenous_wieghts,divisor)
+
+class TestOrthagomalComplement(unittest.TestCase):
+  
+  def test_zero(self):
+    v_space = VectorSpace(QQ,4)
+    zero = v_space.subspace([v_space.zero()])
+    comp = orth_complement(v_space,zero)
+    self.assertEqual(v_space,comp)
+    
+  def test_full(self):
+    v_space = VectorSpace(QQ,4)
+    zero = v_space.subspace([v_space.zero()])
+    comp = orth_complement(v_space,v_space)
+    self.assertEqual(zero,comp)
+
+  def test_comp(self):
+    v_space = VectorSpace(QQ,4)
+    sub = v_space.subspace([[1,1,1,1],[2,2,-3,-1]])
+    comp = orth_complement(v_space,sub)
+    true_comp = v_space.subspace([[19,-17,3,-5],[1,-1,0,0]])
+    self.assertEqual(comp,true_comp)
+
+  def test_satisfy_inter(self):
+    v_space = VectorSpace(QQ,4)
+    sub = v_space.subspace([[1,-1,1,1],[2,-3,4,5]])
+    comp = orth_complement(v_space,sub)
+    zero = v_space.subspace([v_space.zero()])
+    inter = sub.intersection(comp)
+    self.assertEqual(zero,inter)
+
+  def test_satisfy_sum(self):
+    v_space = VectorSpace(QQ,4)
+    sub = v_space.subspace([[1,1,1,-1],[2,-3,41,5]])
+    comp = orth_complement(v_space,sub)
+    self.assertEqual(v_space,sub+comp)
     
     
 class TestSkewIter(unittest.TestCase):
@@ -70,6 +107,13 @@ class TestSkewIter(unittest.TestCase):
     for index in skew_iter(7,3):
       self.assertTrue(index[2] > index[1])
       self.assertTrue(index[1] > index[0])
+
+  def test_edge(self):
+    #Based on a bug issue found
+    vars = []
+    for index in skew_iter(5,4):
+      vars.append(index)
+    self.assertEquals(vars,[[0,1,2,3],[0,1,2,4],[0,1,3,4],[0,2,3,4],[1,2,3,4]])
       
 class TestLogartihmicDifferentialForms(unittest.TestCase):
 
@@ -179,6 +223,24 @@ class TestLogartihmicDifferentialForms(unittest.TestCase):
     whitney = self.x**2*self.y-self.z**2
     logdf = LogarithmicDifferentialForms(whitney)
     homology = logdf.homology("equivarient")
+    homology_size = {}
+    for i,c in homology.iteritems():
+      homology_size[i] = len(c)
+    self.assertEqual(homology_size,{0:1,1:0,2:0,3:0})
+
+  def test_relative_complex_0_crossing(self):
+    crossing = self.x*self.y*self.z
+    logdf = LogarithmicDifferentialForms(crossing)
+    homology = logdf.chain_complex("relative",None,0)
+    homology_size = {}
+    for i,c in homology.iteritems():
+      homology_size[i] = len(c)
+    self.assertEqual(homology_size,{0:1,1:2,2:1,3:0})
+
+  def test_relative_complex_0_whitney(self):
+    whitney = self.x**2*self.y-self.z**2
+    logdf = LogarithmicDifferentialForms(whitney)
+    homology = logdf.chain_complex("relative",None,0)
     homology_size = {}
     for i,c in homology.iteritems():
       homology_size[i] = len(c)
