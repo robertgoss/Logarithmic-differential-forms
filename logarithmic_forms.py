@@ -153,6 +153,7 @@ class LogarithmicDifferentialForms(SageObject):
       for p_form in self._p_gens[p]:
         gens.append(p_form.vec)
       self._p_modules[p] = SingularModule(gens)
+      self._p_modules[p].reduce_generators()
 
   def _convert_p_vec_to_p_form(self,p,vec):
     p_form = DifferentialForm(self.form_space,p);
