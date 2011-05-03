@@ -3,24 +3,10 @@ import sage.all
 
 from sage.structure.sage_object import SageObject
 
-from sage.numerical.mip import MixedIntegerLinearProgram
-
-from sage.sets.set import Set
 
 from sage.rings.rational import Rational
 
-from sage.tensor.coordinate_patch import CoordinatePatch
-from sage.tensor.differential_forms import DifferentialForms
 from sage.tensor.differential_form_element import DifferentialForm
-
-
-
-from sage.rings.rational_field import QQ
-from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
-from sage.symbolic.ring import var
-from sage.modules.free_module_element import vector
-from sage.modules.free_module import VectorSpace
-from sage.matrix.constructor import matrix
 
 def skew_iter(ngens,degree=1,start=0):
   if degree == 1:
@@ -190,7 +176,7 @@ class LogarithmicDifferentialForm(SageObject):
       return LogarithmicDifferentialForm(n,[poly],diff_forms)
     #Compute vec
     vec = []
-    for i,v in enumerate(skew_iter(diff_forms.poly_ring.ngens(),form.degree())):
+    for _,v in enumerate(skew_iter(diff_forms.poly_ring.ngens(),form.degree())):
       sym_poly = form[tuple(v)] * sym_divisor
       vec.append(convert_symbolic_to_polynomial(sym_poly,diff_forms.poly_ring,diff_forms.form_vars))
     return LogarithmicDifferentialForm(form.degree(),vec,diff_forms)

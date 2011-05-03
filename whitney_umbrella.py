@@ -2,13 +2,9 @@
 
 from logarithmic_forms import LogarithmicDifferentialForms
 
-from singular_module import SingularModule
 
 from sage.rings.rational_field import QQ
 from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
-from sage.symbolic.ring import var
-
-from sage.tensor.differential_form_element import DifferentialForm
 
 
 #Make a more general class for these

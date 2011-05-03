@@ -12,9 +12,6 @@ from sage.rings.ideal import Ideal
 class NotImplementedException(Exception):
   pass
 
-def _sing_ring(ring,var_name="x"):
-  return "ring r = 0,(x(1.."+str(n_vars)+")),dp;\n"
-  
 def _sing_mod(gens,mod_name="MD",vars_name="x"):
   poly_ring = gens[0][0].parent()
   mod = "module "+str(mod_name)+"="
@@ -66,9 +63,9 @@ def _possible_gens(coeffs,ideal,var=0):
 
 def _generators_from_relation(rel_coeffs,ideal):
   poly_ring = rel_coeffs[0].parent()
-  #posible first vaules
+  #possible first values
   poss_gens_0 = _possible_gens(rel_coeffs,ideal,0)
-  #Particulars for thise values
+  #Particulars for these values
   part_ideal = Ideal(poly_ring,rel_coeffs[1:]+list(ideal.gens()))
   poss_gens = []
   if not rel_coeffs[0].is_zero():
@@ -116,7 +113,7 @@ class SingularModule(SageObject):
     return _sing_mod(self.gens,module_name);
     
   def _contains_vector(self,vector):
-    ring = ring = self.create_ring_str()
+    ring = self.create_ring_str()
     module = self.create_module_str("modA")
     vector  = SingularModule([vector]).create_module_str("vec")
     vector.replace("module","vector")#Bad hack
@@ -134,7 +131,7 @@ class SingularModule(SageObject):
       if not self.contains(g):
         return False
     return True
-	
+
   def contains(self,object):
     if hasattr(object,"gens"):
       return self._contains_module(object)

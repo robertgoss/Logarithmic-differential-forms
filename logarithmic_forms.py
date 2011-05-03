@@ -3,18 +3,13 @@ import sage.all
 
 from sage.structure.sage_object import SageObject
 
-from sage.numerical.mip import MixedIntegerLinearProgram
-
 from sage.sets.set import Set
-
-from sage.rings.rational import Rational
 
 from sage.tensor.coordinate_patch import CoordinatePatch
 from sage.tensor.differential_forms import DifferentialForms
 from sage.tensor.differential_form_element import DifferentialForm
 
 from sage.rings.rational_field import QQ
-from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
 from sage.symbolic.ring import var
 from sage.modules.free_module_element import vector
 from sage.modules.free_module import VectorSpace
@@ -169,7 +164,7 @@ class LogarithmicDifferentialForms(SageObject):
     
   def _convert_p_form_to_p_vec(self,p,p_form):
     p_vec = []
-    for i,v in enumerate(skew_iter(self.poly_ring.ngens(),p)):
+    for _,v in enumerate(skew_iter(self.poly_ring.ngens(),p)):
       poly = convert_symbolic_to_polynomial(p_form[tuple(v)],self.poly_ring,self.form_vars)
       p_vec.append(poly)
     return p_vec

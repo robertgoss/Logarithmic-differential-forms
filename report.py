@@ -64,7 +64,7 @@ def write_master(uid,d_strings):
     master_string = master_master.read()
     master_master.close()
     inputs = []
-    for i,d_string in enumerate(d_strings):
+    for i,_ in enumerate(d_strings):
         input_file = os.path.join("report"+str(i)+".tex")
         inputs.append("\input{"+input_file+"}")
     inputs = "\n".join(inputs)

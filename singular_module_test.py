@@ -6,7 +6,6 @@ from singular_module import SingularModule
 
 from sage.rings.rational_field import QQ
 from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
-from sage.symbolic.ring import var
 from sage.rings.ideal import Ideal
 
 class TestSingularModule(unittest.TestCase):
@@ -21,7 +20,7 @@ class TestSingularModule(unittest.TestCase):
     x = self.x
     y = self.y
     z = self.z
-    sm = SingularModule([[x,y+z,z**3-2*y],[x,y,z]])
+    SingularModule([[x,y+z,z**3-2*y],[x,y,z]])
     #Check this did cause an error
     self.assertTrue(True)
     
@@ -201,7 +200,6 @@ class TestSingularModule(unittest.TestCase):
   def test_is_free(self):
     x = self.x
     y = self.y
-    z = self.z
     zero = self.poly_ring.zero()
     free = SingularModule([[x,zero,zero],[zero,y,zero],[zero,zero,x**2]])
     self.assertTrue(free.is_free())
@@ -209,7 +207,6 @@ class TestSingularModule(unittest.TestCase):
   def test_is_free_not(self):
     x = self.x
     y = self.y
-    z = self.z
     sm1 = SingularModule([[x,x,x],[y,y,y]])
     self.assertFalse(sm1.is_free())
     
@@ -322,8 +319,6 @@ class TestSingularModule(unittest.TestCase):
     x = self.x
     y = self.y
     z = self.z
-    one = self.poly_ring.one()
-    zero = self.poly_ring.zero()
     sm1 = SingularModule([[x,y+z,z**3-2*y],[x,y,z]])
     vec = sm1.lift([x**2+x*z+x,x*y+x*z+y*z+y,z**3*x-2*y*x+z**2+z])
     self.assertEqual(vec[0]*x+vec[1]*x,x**2+x*z+x)
@@ -334,8 +329,6 @@ class TestSingularModule(unittest.TestCase):
     x = self.x
     y = self.y
     z = self.z
-    one = self.poly_ring.one()
-    zero = self.poly_ring.zero()
     sm1 = SingularModule([[x,y+z,z**3-2*y],[x,y,z]])
     vec = sm1.lift([3*x,3*y+z,z**3-2*y+2*z],True)
     self.assertEqual(vec,[1,2])

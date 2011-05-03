@@ -8,8 +8,6 @@ from logarithmic_form import LogarithmicDifferentialForm
 
 from logarithmic_forms import LogarithmicDifferentialForms
 
-from sage.tensor.differential_form_element import DifferentialForm
-
 from sage.rings.rational_field import QQ
 from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
 from sage.symbolic.ring import var
@@ -39,15 +37,12 @@ class TestConvertSymToPoly(unittest.TestCase):
     self.assertEqual(poly,4*x**4+y*x**12*y-z)
 
   def test_convert_univarient(self):
-    x = self.x
     y = self.y
-    z = self.z
     sym_poly = 4*self.vars[1]**4 + self.vars[1]*self.vars[1]**12*self.vars[1]-self.vars[1]
     poly = convert_symbolic_to_polynomial(sym_poly,self.poly_ring,self.vars)
     self.assertEqual(poly,4*y**4+y*y**12*y-y)
 
   def test_convert_partial(self):
-    x = self.x
     y = self.y
     z = self.z
     sym_poly = 4*self.vars[2]**4 + self.vars[1]*self.vars[1]**12*self.vars[1]-self.vars[1]
@@ -111,8 +106,6 @@ class TestLogarithmicDifferentialForm(unittest.TestCase):
     self.assertEqual(form,logdf.form)
 
   def test_creation_0_form(self):
-    x = self.normal_logdf.form_vars[0]
-    y = self.normal_logdf.form_vars[1]
     z = self.normal_logdf.form_vars[2]
     logdf = LogarithmicDifferentialForm(0,[self.x*self.y],self.normal_logdf)
     form = DifferentialForm(self.normal_logdf.form_space,0,1/z)
@@ -182,9 +175,6 @@ class TestLogarithmicDifferentialForm(unittest.TestCase):
 
   def test_unit(self):
     one = LogarithmicDifferentialForm.make_unit(self.normal_logdf)
-    x = self.normal_logdf.form_vars[0]
-    y = self.normal_logdf.form_vars[1]
-    z = self.normal_logdf.form_vars[2]
     form = DifferentialForm(self.normal_logdf.form_space,0,1)
     one_form = LogarithmicDifferentialForm.create_from_form(form,self.normal_logdf)
     self.assertTrue(one.equals(one_form))

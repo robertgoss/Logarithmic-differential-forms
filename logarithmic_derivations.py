@@ -12,7 +12,7 @@ class LogarithmicDerivations(SingularModule):
     poly_ring = divisor.parent()
     #Compute gen set
     rel = [poly_ring.zero() for _ in range(poly_ring.ngens())]
-    for c,mon in divisor:
+    for _,mon in divisor:
       exp = mon.exponents()[0]
       for i in range(poly_ring.ngens()):
         rel[i] = rel[i] + exp[i]*mon//poly_ring.gens()[i]

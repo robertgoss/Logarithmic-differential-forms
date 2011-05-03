@@ -4,8 +4,6 @@ import unittest
 
 from logarithmic_forms import homogenous_wieghts
 from logarithmic_forms import NotWieghtHomogeneousException
-from logarithmic_forms import convert_polynomial_to_symbolic
-from logarithmic_forms import convert_symbolic_to_polynomial
 from logarithmic_forms import skew_iter
 from logarithmic_forms import orth_complement
 from logarithmic_forms import LogarithmicDifferentialForms
@@ -17,7 +15,6 @@ from sage.modules.free_module import VectorSpace
 from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
 from sage.symbolic.ring import var
 
-from sage.tensor.differential_form_element import DifferentialForm
 
     
 class TestHomogeneousWieghts(unittest.TestCase):

@@ -120,7 +120,6 @@ class TestGradedModule(unittest.TestCase):
   def test_monomial_basis(self):
     x = self.x
     y = self.y
-    z = self.z
     one = self.poly_ring.one()
     zero = self.poly_ring.zero()
     gm = GradedModule([[one,one]],[0,1],[1,2,3])
@@ -128,9 +127,6 @@ class TestGradedModule(unittest.TestCase):
     self.assertEqual(Set(gm.monomial_basis(2)),Set(true_basis))
 
   def test_homogeneous_parts_A(self):
-    x = self.x
-    y = self.y
-    z = self.z
     one = self.poly_ring.one()
     zero = self.poly_ring.zero()
     gm = GradedModule([[one,one]],[0,1],[1,2,3])
@@ -153,7 +149,6 @@ class TestGradedModule(unittest.TestCase):
     y = self.y
     z = self.z
     one = self.poly_ring.one()
-    zero = self.poly_ring.zero()
     gm = GradedModule([[z,one,x**2 + y]],[0,1,2],[1,2,3])
     basis = gm.homogeneous_part_basis(6);
     self.assertEqual(len(basis),10)
@@ -163,7 +158,6 @@ class TestGradedModule(unittest.TestCase):
     x = self.x
     y = self.y
     z = self.z
-    one = self.poly_ring.one()
     zero = self.poly_ring.zero()
     gm = GradedModule([[zero, x*z, x*y], [zero, -x*z, zero], [y*z, zero, zero]],[1, 1, 1],[1, 1, 1])
     basis = gm.homogeneous_part_basis(3);
