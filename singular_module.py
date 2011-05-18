@@ -90,12 +90,26 @@ def wieghts(polynomial):
   ring = p_mod.create_ring_str()
   p_mod_str = p_mod.create_module_str("p_mod")
   mat_code = "matrix mat_p = p_mod;\n"
-  ideal_code = "ideal i_p = mat_p[1,1];\n"
-  qh_code = "weight(i_p);\n"
+  ideal_code = "poly d= mat_p[1,1];\n"
+  qh_code = "weight(d);\n"
   all_code = ring+p_mod_str+mat_code+ideal_code+qh_code
   output = _singular_inst.eval(all_code)
   last_line = output.split("\n")[-1]
-  return [int(w) for w in last_line.split(",")]
+  w_vec = [int(w) for w in last_line.split(",")]
+  return w_vec
+
+def qhwieghts(polynomial):
+  p_mod = SingularModule([[polynomial]])
+  ring = p_mod.create_ring_str()
+  p_mod_str = p_mod.create_module_str("p_mod")
+  mat_code = "matrix mat_p = p_mod;\n"
+  ideal_code = "poly d= mat_p[1,1];\n"
+  qh_code = "qhweight(d);\n"
+  all_code = ring+p_mod_str+mat_code+ideal_code+qh_code
+  output = _singular_inst.eval(all_code)
+  last_line = output.split("\n")[-1]
+  w_vec = [int(w) for w in last_line.split(",")]
+  return w_vec
 
 
 class SingularModule(SageObject):

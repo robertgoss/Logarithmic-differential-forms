@@ -57,7 +57,7 @@ def rand_w_hom_divisor(n,degs=None,mon_num=None,var="z"):
   poly_ring = PolynomialRing(QQ,n,var)
   div = poly_ring.zero()
   min_w = min(degs)
-  for i in mon_num:
+  for i in range(mon_num):
     expo = [0]*n
     cur_deg = 0
     while cur_deg!=deg:

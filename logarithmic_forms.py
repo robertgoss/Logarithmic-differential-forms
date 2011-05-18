@@ -35,8 +35,19 @@ class SymbolicNotPolynomialException(Exception):
   pass
 
 
-def homogenous_wieghts(divisor):
+def _homogenous_wieghts(divisor):
   hw = singular_module.wieghts(divisor)
+  for w in hw:
+    if w!=0:
+      degree = sum([w*e_m for w,e_m in zip(hw,divisor.exponents()[0])])
+      for ex in divisor.exponents():
+        if degree != sum([w*e_m for w,e_m in zip(hw,ex)]):
+          raise NotWieghtHomogeneousException
+      return [degree]+hw
+  raise NotWieghtHomogeneousException
+
+def _qhhomogenous_wieghts(divisor):
+  hw = singular_module.qhwieghts(divisor)
   for w in hw:
     if w!=0:
       degree =  sum([w*e_m for w,e_m in zip(hw,divisor.exponents()[0])])
@@ -45,6 +56,20 @@ def homogenous_wieghts(divisor):
           raise NotWieghtHomogeneousException
       return [degree]+hw
   raise NotWieghtHomogeneousException
+
+def homogenous_wieghts(divisor):
+  try:
+    hom = _qhhomogenous_wieghts(divisor)
+    for w in hom:
+      if w!=0:
+        return hom
+    raise NotWieghtHomogeneousException
+  except:
+    hom = _homogenous_wieghts(divisor)
+    for w in hom:
+      if w!=0:
+        return hom
+    raise NotWieghtHomogeneousException
   
 def _weighted_sum(weights,forms,diff_forms):
   part = LogarithmicDifferentialForm.make_zero(forms[0].degree,diff_forms)
